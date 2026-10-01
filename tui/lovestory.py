@@ -288,7 +288,7 @@ def export(args):
     t0, t1 = args.start, min(edit[-1][1], args.end or edit[-1][1])
     cmd = ['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{W}x{H}', '-r', str(fps), '-i', '-']
     if args.audio:
-        cmd += ['-ss', f'{t0:.3f}', '-i', args.audio, '-map', '0:v', '-map', '1:a', '-c:a', 'aac', '-b:a', '256k', '-shortest']
+        cmd += ['-ss', f'{t0:.3f}', '-i', args.audio, '-map', '0:v', '-map', '1:a', '-c:a', 'aac', '-b:a', '256k', '-af', 'apad', '-t', f'{t1 - t0:.3f}']
     cmd += ['-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', args.export]
     ff = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     n = int((t1 - t0) * fps)
