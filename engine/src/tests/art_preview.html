@@ -1,0 +1,30 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<script type="importmap">{ "imports": { "three": "../../../node_modules/three/build/three.module.js" } }</script>
+<style>html,body{margin:0;background:#222}</style></head>
+<body><canvas id="out"></canvas>
+<script type="module">
+// Art preview: renders a Cut's layers flat (paper background, ink silhouette, gilt gold, tone grey, glow orange)
+const Q = new URLSearchParams(location.search);
+const mod = await import(Q.get('mod') || '../sets/ballroom_art.js');
+const fn = Q.get('fn');
+const cut = await mod[fn]({ preview: true });
+const list = Array.isArray(cut) ? cut : [cut];
+const scale = parseFloat(Q.get('s') || '1');
+let W = 0, H = 0; for (const c of list) { W += c.w * scale + 10; H = Math.max(H, c.h * scale); }
+const out = document.getElementById('out'); out.width = Math.ceil(W); out.height = Math.ceil(H);
+const o = out.getContext('2d'); o.fillStyle = Q.get('bg') || '#d9cfbd'; o.fillRect(0, 0, W, H);
+let x = 0;
+for (const c of list) {
+  const w = c.w * scale, h = c.h * scale;
+  const tmp = document.createElement('canvas'); tmp.width = c.w; tmp.height = c.h; const t = tmp.getContext('2d');
+  const tint = (src, col, op = 'source-over') => { const k = document.createElement('canvas'); k.width = c.w; k.height = c.h; const kc = k.getContext('2d'); kc.drawImage(src, 0, 0); kc.globalCompositeOperation = 'source-in'; kc.fillStyle = col; kc.fillRect(0, 0, c.w, c.h); t.globalCompositeOperation = op; t.drawImage(k, 0, 0); };
+  tint(c.sil, '#14110f');
+  if (c.ton) tint(c.ton, 'rgba(120,105,90,0.9)');
+  if (c.gil) tint(c.gil, '#d8a548');
+  tint(c.win, 'rgba(255,150,50,0.95)');
+  o.drawImage(tmp, x, H - h, w, h);
+  x += w + 10;
+}
+window.done = [out.width, out.height];
+</script></body></html>
