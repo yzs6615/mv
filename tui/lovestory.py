@@ -176,10 +176,20 @@ class Raster:
     def __init__(self, cols, rows, size=16):
         from PIL import ImageFont
         here = os.path.dirname(os.path.abspath(__file__))
-        mono = '/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf'
-        cjk = os.environ.get('LS_CJK_FONT') or os.path.join(here, '..', 'build', 'cjk.otf')
+        mono = next((p for p in ('/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf',
+                                 '/usr/share/fonts/TTF/DejaVuSansMono.ttf', '/Library/Fonts/Menlo.ttc',
+                                 'C:/Windows/Fonts/consola.ttf') if os.path.exists(p)), None)
+        if not mono:
+            sys.exit('no monospace font found; install DejaVu Sans Mono')
+        cjk_cands = [os.environ.get('LS_CJK_FONT', ''), os.path.join(here, '..', 'build', 'cjk.otf'),
+                     '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
+                     '/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc', '/System/Library/Fonts/PingFang.ttc',
+                     'C:/Windows/Fonts/msyh.ttc']
+        cjk = next((p for p in cjk_cands if p and os.path.exists(p)), None)
+        if not cjk:
+            print('warning: no CJK font found (set LS_CJK_FONT); Chinese text will render as boxes', file=sys.stderr)
         self.font = ImageFont.truetype(mono, size)
-        self.cjk = ImageFont.truetype(cjk, size) if os.path.exists(cjk) else self.font
+        self.cjk = ImageFont.truetype(cjk, size) if cjk else self.font
         self.cw = int(round(self.font.getlength('M')))
         self.chh = int(size * 1.25)
         self.cols, self.rows = cols, rows
@@ -208,7 +218,7 @@ class Raster:
                     self.braille(d, x, y, o - 0x2800, col)
                     x += 1
                     continue
-                if c in '█▓▒░▌▪':
+                if c in '█▓▒░▌▪▀▄':
                     self.block(d, x, y, c, col)
                     x += 1
                     continue
@@ -231,6 +241,10 @@ class Raster:
         x0, y0, x1, y1 = x * self.cw, y * self.chh, (x + 1) * self.cw - 1, (y + 1) * self.chh - 1
         if c == '▌':
             d.rectangle([x0, y0, x0 + self.cw // 2 - 1, y1], fill=col)
+        elif c == '▀':
+            d.rectangle([x0, y0, x1, y0 + self.chh // 2 - 1], fill=col)
+        elif c == '▄':
+            d.rectangle([x0, y0 + self.chh // 2, x1, y1], fill=col)
         elif c == '▪':
             d.rectangle([x0 + 2, y0 + self.chh // 3, x1 - 2, y1 - self.chh // 3], fill=col)
         else:

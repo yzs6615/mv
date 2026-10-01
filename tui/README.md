@@ -1,51 +1,65 @@
-# LOVE STORY — terminal edition · 爱情故事 · 终端版
+# 爱情故事 · 终端版 — LOVE STORY, terminal edition
 
-A music video for *Love Story* (Taylor Swift) that plays live in your terminal: ASCII, box drawing and braille
-graphics, synced to the song's bars, beats and key change. There are no human figures. The lovers are
-**process A** (amber, `montague.net`) and **process B** (rose, `capulet.net`). The system's policy forbids
-them to talk to each other.
+一支在终端里实时播放的 *Love Story*（Taylor Swift）音乐视频：ASCII、制表符和盲文点阵画面，严格对齐歌曲的小节、
+拍子和第 94 小节的转调。画面里没有人物。两个主角是 **进程 A**（琥珀色，`montague.net`）和 **进程 B**（玫瑰色，
+`capulet.net`）。系统策略禁止它们通信。
 
-## Run 运行
+屏幕文字以中文为主（旁白、章节、日志、HUD），英文只作为系统命令和小字副标题出现。**全片不出现任何歌词。**
+
+## 运行 Run
 
 ```bash
-python3 tui/lovestory.py --audio /path/to/Love_Story.flac   # needs ffplay (ffmpeg) or mpv for sound
-python3 tui/lovestory.py --mute                             # visuals only
-python3 tui/lovestory.py --audio song.flac --start 185      # jump to the turning point
-python3 tui/lovestory.py --audio song.flac --sync 0.08      # delay visuals if your audio output lags
+python3 tui/lovestory.py --audio /path/to/Love_Story.flac   # 需要 ffplay（ffmpeg）或 mpv 才有声音
+python3 tui/lovestory.py --mute                             # 只看画面
+python3 tui/lovestory.py --audio song.flac --start 185      # 从转折处开始
+python3 tui/lovestory.py --audio song.flac --sync 0.08      # 如果声音比画面晚，给画面加延迟
 ```
 
-* Python 3 standard library only. Use a truecolor terminal (iTerm2, WezTerm, kitty, Windows Terminal, VS Code,
-  GNOME Terminal) at ≥ 160×45 for the full composition. It adapts to any size ≥ 60×18 and to live resizing,
-  and falls back to 256 colours (`--color 256`).
-* The song file is **not included**. Bring your own copy. Press `q` to quit.
-* Offline export (Pillow + ffmpeg): `python3 tui/lovestory.py --export out.mp4 --audio song.flac`
+* 实时播放只依赖 Python 3 标准库。请用真彩色终端（iTerm2、WezTerm、kitty、Windows Terminal、VS Code、
+  GNOME Terminal），尺寸 ≥ 160×45 才有完整构图；≥ 60×18 都能播，支持实时缩放；`--color 256` 退回 256 色。
+* 终端字体需要包含中文字形（绝大多数中文环境的终端默认就有）。
+* **歌曲文件不包含在仓库里**，请自备。按 `q` 退出。实时播放目前只支持 macOS / Linux / WSL（用到 `termios`）。
+* 离线导出视频（需要 Pillow + ffmpeg）：`python3 tui/lovestory.py --export out.mp4 --audio song.flac`。
+  导出时中文字体通过环境变量 `LS_CJK_FONT` 指定（例如 Noto Sans CJK 的 .otf/.ttc），否则中文会显示成方块。
 
-## Story map 叙事结构
+## 节奏 Pacing
 
-| chapter | time | screen |
-|---|---|---|
-| boot | 0:00 | `verona-os` boot log: two households, `firewall … DENY`, two processes "share one heartbeat"; the title evaporates into stars |
-| 01 初见 FIRST SIGHT | 0:16 | star field; A and B send ping rings that slowly reach each other. Masquerade mesh: a crowd of grey node pairs waltzing; `ping B` → time ×0.04 |
-| 02 靠近 CLOSER | 0:48 | the crowd parts; the two lights step closer on every beat; ECG trace (heartbeat 72 → 119 bpm, the song's tempo) |
-| 02 → chorus | 1:00 | the waltz: two lights orbit and paint rosettes in braille; packets on every beat; `<3` rises on each downbeat |
-| 03 阻隔 FIREWALL | 1:20 | a red wall slams down. `ACCESS DENIED` |
-| 04 秘密相爱 ENCRYPTED | 1:24 | `capulet:/balcony [ro]` above `montague:/garden`. Hex messages bounce off (`EACCES`), then get through and decrypt to `<3`; a vine of light climbs the gap. Then a permission maze: `Permission denied`, `not in the sudoers file` … `route found (hidden)` |
-| 05 逃离 ESCAPE | 1:53 | two data streams braided into a helix race over a sleeping city, hopping `[DENY]` gates. An IDS trace closes in, the helix is torn apart. Storm: a jagged crack splits the screen, glyph rain, `connection reset by peer` |
-| 06 等待 WAITING | 2:45 | one small window in the dark: `wait --for A --timeout never`, `day 104`, `request timed out` |
-| 07 失落 TIMEOUT | 2:59 | the window shrinks to a single dim prompt, then an empty screen. A faint amber point crosses the dark: `signal: A` |
-| 08 重逢 SIGNAL | 3:09 | **key change.** The void unfolds into a tiled terminal lattice and the firewall shatters into stars. `SYN → SYN-ACK → ACK` |
-| 09 承诺 HANDSHAKE | 3:17 | `CONNECTED`; the rule is rewritten `~~DENY~~ ALLOW`; a ring closes around them. `SO_KEEPALIVE = ∞` |
-| 10 圆满 CONNECTED | 3:25 | the most open composition: no borders, both households' networks routed through the joined pair, a rotating rose curve, light rising everywhere |
-| exit 0 | 3:50 | two cursors blinking in sync. `process exited with status 0` |
+* 节拍网格来自 `analysis/analyze.py`：119.01 BPM，每拍 0.50416 秒，第一拍 0.18993 秒，每小节 2.016627 秒。
+  第 *n* 小节开始于 `0.18993 + 2.016627·n` 秒。整首歌是打点录制的，网格不漂移。
+* `story.py` 给每个段落（前奏 / 主歌 / 预副歌 / 副歌 / 桥段 / 转调副歌 / 尾声）定义了能量值，画面的运动速度、
+  星空流速、光晕呼吸和粒子密度都跟着段落变：主歌慢而稀，预副歌逐渐加速，副歌每两小节切一次图形、每个底鼓
+  （第 1、3 拍）打一次光环，桥段的"最静处"几乎留白。
+* 第 94 小节转调（D 大调 → E 大调）：画面整体提亮一级，HUD 的调性标签翻到 "E大调 ↑"，顶部出现转调说明。
+* 顶部 HUD：当前段落名、按段落比例画出的歌曲结构进度条（当前段落随拍闪烁，`┃` 标记转调位置）、小节数、
+  四拍指示 `●○○○`、BPM、调性。底部两行是中文旁白和英文小字；最底一行是状态栏（章节、连接状态、心跳、时间）。
 
-On screen the composition goes from closed panes and walls to open space. The status bar's relation flips from
-`✕` to `⇄` at the key change. Light always rises; denial is red and static.
+## 叙事结构 Story map
 
-## Files
+| 小节 | 时间 | 章节 | 画面 |
+|---|---|---|---|
+| 0–8 | 0:00 | 启动 | `维罗纳OS` 启动日志：两个家族、防火墙 `禁止`、两个进程"共用同一个心跳"；大字标题 LOVE STORY / 爱情故事 升华成星空 |
+| 8–16 | 0:16 | 01 初见 | 星图；A 和 B 每个小节的第一拍发出一圈探测涟漪，第 12 小节乐队退后时两圈第一次相触；探测日志 |
+| 16–24 | 0:32 | 02 靠近 | 假面舞会：26 对戴面具的节点在旋转；`ping B` 穿过房间，时间慢到 ×0.04 |
+| 24–30 | 0:48 | 02 靠近 | 人群让开，每一拍靠近一格；距离与心率倒数；心电图；能量条随预副歌上升 |
+| 30–40 | 1:00 | 第一支舞 | 副歌：两道轨迹画玫瑰线，每两小节换一种图形；每拍交换一个数据包并记入右侧账本 |
+| 40–42 | 1:20 | 03 阻隔 | 红墙落下，大字"访问被拒绝"；`iptables: 丢弃` |
+| 42–50 | 1:24 | 04 秘密相爱 | `capulet:/阳台 [只读]` 与 `montague:/花园`；前四封信退回 EACCES，第五封解密成 `<3`；光藤蔓爬上阳台 |
+| 50–56 | 1:41 | 04 权限迷宫 | 权限迷宫搜索随预副歌加速；`sudo`/`chmod`/`ssh` 全部被拒，最后在 `/garden/.secret` 找到隐藏路线 |
+| 56–66 | 1:53 | 05 逃离 | 两条数据流拧成螺旋掠过沉睡的城市，每两小节跳过一道 `[拒绝]` 闸门；城市灯光随底鼓闪 |
+| 66–74 | 2:13 | 05 追踪 | 入侵检测每小节扫一次，进度上涨，螺旋被撕开 |
+| 74–82 | 2:29 | 断开 | 暴雨，屏幕从中间裂开，第 75/77/79/80.5 小节闪电；`连接被对端重置` / `无法到达主机` |
+| 82–89 | 2:45 | 06 等待 | 一扇小窗：`wait --for A --timeout never`，日历每一拍填一格，`请求超时` |
+| 89–94 | 2:59 | 07 失落 | 窗口缩成一个提示符，再归于黑；第 93 小节一个琥珀色的点穿过黑暗，右侧升调阶梯 |
+| 94–102 | 3:09 | 08 重逢 / 09 承诺 | **转调。** 终端格栅展开，防火墙碎成星星；SYN → SYN-ACK → ACK；大字"已连接"；策略改写 `~~禁止~~ 允许`；`SO_KEEPALIVE = ∞` |
+| 102–114 | 3:25 | 10 圆满 | 最开阔的构图：两个家族的网络都经过 A⇄B，玫瑰线每两小节换瓣数，路由表每拍一行，光向上升 |
+| 114– | 3:50 | 退出 | 两个光标同步闪烁，`进程退出，状态码 0`，片尾字幕 |
 
-* `core.py`: canvas with wide-glyph handling, braille 2×4 sub-cell layer, block font, music clock
-* `scenes.py`: the 16 scenes and the edit, each a pure function of song time
-* `lovestory.py`: live player (row-diffed ANSI, audio sync) and the offline rasteriser/exporter
-* `data/music_map.json`: beat grid (119.01 BPM), bars, sections and envelopes from `analysis/analyze.py`
+## 文件 Files
 
-No song lyrics appear anywhere in the piece. All on-screen text is original.
+* `core.py`：画布（支持全角字符）、盲文 2×4 子格图层、ASCII 大字、节拍时钟
+* `story.py`：中文叙事层——段落名与能量、旁白表、HUD、中文大字（点阵）和章节标题卡
+* `scenes.py`：16 个场景和剪辑表，每一帧只由歌曲时间决定
+* `lovestory.py`：实时播放器（逐行差分 ANSI 输出、音频同步）和离线栅格化/导出器
+* `make_glyphs.py`：用 Pillow 和一个中文字体预渲染 `data/glyphs.json`（运行时不需要 Pillow）
+* `data/music_map.json`：节拍网格、小节、段落和包络（由 `analysis/analyze.py` 生成）
+* `data/glyphs.json`：中文大字点阵（16px 和 12px 两档）
