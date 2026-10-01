@@ -1,0 +1,9 @@
+node_modules/
+build/
+assets/*.flac
+assets/*.wav
+assets/*.mp3
+*.mp4
+*.mov
+*.mkv
+__pycache__/

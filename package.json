@@ -1,0 +1,23 @@
+{
+  "name": "love-story-op55",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LOVE STORY — a music video written entirely in code (Three.js / WebGL / procedural audio).",
+  "type": "module",
+  "scripts": {
+    "analyze": "python3 analysis/analyze.py",
+    "render": "node render/render.mjs",
+    "build": "bash build.sh"
+  },
+  "dependencies": {
+    "@fontsource/cinzel": "^5.0.0",
+    "@fontsource/cormorant-garamond": "^5.0.0",
+    "@fontsource/courier-prime": "^5.3.0",
+    "@fontsource/noto-serif-sc": "^5.0.0",
+    "three": "0.186.1",
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.1"
+  }
+}
