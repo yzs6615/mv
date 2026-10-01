@@ -1,15 +1,21 @@
 # 爱情故事 · 终端版 — LOVE STORY, terminal edition
 
 一支在终端里实时播放的 *Love Story*（Taylor Swift）音乐视频：ASCII、制表符和盲文点阵画面，严格对齐歌曲的小节、
-拍子和第 94 小节的转调。画面里没有人物。两个主角是 **进程 A**（琥珀色，`montague.net`）和 **进程 B**（玫瑰色，
-`capulet.net`）。系统策略禁止它们通信。
+拍子和第 94 小节的转调。屏幕文字以中文为主（旁白、章节、日志、HUD），英文只作为系统字符串和小字副标题出现。
+**全片不出现任何歌词。**
 
-屏幕文字以中文为主（旁白、章节、日志、HUD），英文只作为系统命令和小字副标题出现。**全片不出现任何歌词。**
+仓库里有两个版本，用 `--edition` 切换：
+
+| 版本 | 参数 | 主角 | 一句话 |
+|---|---|---|---|
+| **母体版（默认）** | `--edition matrix` | Core_Juliet（纯白淡金，只读金字塔）与 Patch_Romeo（深蓝银色，开源沙盒探针） | 两段有自主意识的代码在规则统治的数字母体里；冷蓝与猩红压抑三分钟，转调时天空碎裂、世界变白 |
+| 经典版 | `--edition classic` | 进程 A（琥珀，`montague.net`）与 进程 B（玫瑰，`capulet.net`） | 两个被防火墙隔开的进程完成握手；无人物，只有光点、数据包和窗口 |
 
 ## 运行 Run
 
 ```bash
-python3 tui/lovestory.py --audio /path/to/Love_Story.flac   # 需要 ffplay（ffmpeg）或 mpv 才有声音
+python3 tui/lovestory.py --audio /path/to/Love_Story.flac   # 母体版，需要 ffplay（ffmpeg）或 mpv 才有声音
+python3 tui/lovestory.py --edition classic --audio song.flac # 经典版
 python3 tui/lovestory.py --mute                             # 只看画面
 python3 tui/lovestory.py --audio song.flac --start 185      # 从转折处开始
 python3 tui/lovestory.py --audio song.flac --sync 0.08      # 如果声音比画面晚，给画面加延迟
@@ -33,7 +39,23 @@ python3 tui/lovestory.py --audio song.flac --sync 0.08      # 如果声音比画
 * 顶部 HUD：当前段落名、按段落比例画出的歌曲结构进度条（当前段落随拍闪烁，`┃` 标记转调位置）、小节数、
   四拍指示 `●○○○`、BPM、调性。底部两行是中文旁白和英文小字；最底一行是状态栏（章节、连接状态、心跳、时间）。
 
-## 叙事结构 Story map
+## 母体版 Matrix edition
+
+* **角色是符号人，不是人脸**：头部是颜文字（`(-_-)` 冷漠、`(o_o)` 好奇、`(^_^)` 微笑、`(^3^)` 爱、`(>_<)` 恐惧、
+  `(;_;)`/`(T_T)` 哭、`(x_x)` 消亡、`(^o^)` 狂喜），肢体是 `/|\`、`\|/`、`/|─`（伸手）、`-|\`（潜行）、`/ _`（单膝跪地）
+  这样的字符，外面围一圈光粒。Romeo 多一条彗星尾和三颗绕行的银色粒子，root 权限是头顶的金色光环。
+* **情绪用节奏和运镜表达**：高兴时随拍蹦跳、反拍举手；害怕时按十六分音符发抖；悲伤时缓慢左右漂移；每个下拍眨一次眼。
+  警报、鼓点、重启时整屏抖动（`Ctx.shake`），桥段逐渐去色（`desaturate`），警报时整屏泛红（`tint`）。
+* **对话是头顶的全息终端窗**（`holo()`）：逐字打出，`_` 光标按拍闪烁，几秒后淡出。
+* **八幕**（小节）：0–8 启动与只读金字塔 · 8–24 总线假面舞会、初次握手 · 24–40 Master_Firewall、满屏 Access Denied、隔离罩 ·
+  40–56 深夜巡逻线、字节序列小石子、端口 1989、废弃扇区 · 56–74 写入名字、红色泛滥、深渊吞噬、Connection Lost ·
+  74–94 深度包检测、死锁沼泽、隔离区、Tick、ALIVE_FLAG 归零 · 94–102 系统重启、天空碎裂、Romeo 带光环降临、Override Successful、
+  单膝跪地与哈希戒指、她点下确认 · 102–114 两道光柱盘旋合并为 main、世界变白、代码花瓣 · 114– `return { status: "Happily Ever After" };`
+* 彩蛋：`port=1989`、`fearless_mode = true`、合并时间戳 `2008-09-12`、`Updating 1989..2008`。
+* 代码在 `tui/matrix/`：`story.py`（旁白与章节）、`scenes.py`（符号人、全息窗、母体场景、八幕）。HUD、旁白条、中文大字与经典版共用
+  `tui/story.py`。
+
+## 经典版叙事结构 Classic story map
 
 | 小节 | 时间 | 章节 | 画面 |
 |---|---|---|---|
@@ -58,7 +80,8 @@ python3 tui/lovestory.py --audio song.flac --sync 0.08      # 如果声音比画
 
 * `core.py`：画布（支持全角字符）、盲文 2×4 子格图层、ASCII 大字、节拍时钟
 * `story.py`：中文叙事层——段落名与能量、旁白表、HUD、中文大字（点阵）和章节标题卡
-* `scenes.py`：16 个场景和剪辑表，每一帧只由歌曲时间决定
+* `scenes.py`：经典版的 16 个场景和剪辑表，每一帧只由歌曲时间决定
+* `matrix/story.py`、`matrix/scenes.py`：母体版的旁白、符号人、全息窗和八幕
 * `lovestory.py`：实时播放器（逐行差分 ANSI 输出、音频同步）和离线栅格化/导出器
 * `make_glyphs.py`：用 Pillow 和一个中文字体预渲染 `data/glyphs.json`（运行时不需要 Pillow）
 * `data/music_map.json`：节拍网格、小节、段落和包络（由 `analysis/analyze.py` 生成）

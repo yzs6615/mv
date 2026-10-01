@@ -127,22 +127,24 @@ NARRATION = [
 ]
 
 
-def narration_at(m, t):
-    for b0, b1, zh, en in NARRATION:
+def narration_at(m, t, table=None):
+    for b0, b1, zh, en in (table or NARRATION):
         if m.bar(b0) <= t < m.bar(b1):
             return (m.bar(b0), m.bar(b1), zh, en)
     return None
 
 
-def draw_narration(S):
+def draw_narration(S, table=None):
     """two bottom rows above the status bar: Chinese line, small English line"""
     cv, m, t = S.cv, S.m, S.t
-    n = narration_at(m, t)
+    n = narration_at(m, t, table)
     y_zh, y_en = cv.h - 3, cv.h - 2
     cv.fill(0, y_zh, cv.w - 1, y_en, ' ', None)
     if not n:
         return
     t0, t1, zh, en = n
+    if not zh:
+        return
     a = clamp((t - t0) / 0.2) * (1 - smooth(t1 - 0.35, t1 - 0.02, t))
     if a <= 0:
         return

@@ -1,31 +1,56 @@
-# 任务交接：LOVE STORY MV（终端版 · 中文叙事版）
+# 任务交接：LOVE STORY MV（终端版：母体版 + 经典中文版）
 
-分支 `claude/love-story-mv-handoff-tee7q5`。本次会话在上一版终端 ASCII MV 的基础上，按反馈重做了画面：
-**故事讲清楚、信息密度提高、以中文为主、画面严格跟拍并按段落快慢变速、在第 94 小节的转调处对上。**
+分支 `claude/love-story-mv-handoff-tee7q5`。仓库里现在有两个终端版本，用 `--edition` 切换，代码共用播放器、
+导出器、HUD、旁白条和中文大字：
+
+- **母体版 `matrix`（默认，最新）**：按你的分镜做的 Core_Juliet / Patch_Romeo 版本。角色是"颜文字 + 符号肢体 + 光粒"
+  的符号人，情绪靠节奏（随拍蹦跳、十六分音符发抖、慢速漂移、下拍眨眼）和运镜（整屏抖动、去色、泛红、转调时天空碎裂）
+  表达，对话是头顶的全息终端窗。
+- **经典版 `classic`**：上一轮的中文叙事版（进程 A / 进程 B），保留不动。
 
 ## 1. 交付状态
 
 | 部分 | 状态 | 位置 |
 |---|---|---|
-| **终端版 MV（中文叙事版，当前主交付）** | ✅ 已完成，已推送 | `tui/` |
-| 预览视频（含歌曲音轨，4:04，720p） | ✅ 已发给你；仓库忽略 `.mp4`，不提交 | 会话附件 `LoveStory_terminal_zh_720p.mp4`（1600×900 原始导出 43 MB，超过附件上限，用第 2 节的命令可重新生成） |
+| **母体版 MV（当前主交付）** | ✅ 已完成，已推送 | `tui/matrix/` |
+| 经典中文版 MV | ✅ 保留 | `tui/scenes.py` |
+| 母体版预览视频（含歌曲音轨，4:04，720p） | ✅ 已发给你；仓库忽略 `.mp4`，不提交 | 会话附件 `LoveStory_matrix_720p.mp4` |
+| 经典版预览视频 | ✅ 上一轮已发 | 会话附件 `LoveStory_terminal_zh_720p.mp4` |
 | 音乐分析（节拍、段落、转调） | ✅ 沿用 | `analysis/analyze.py` → `tui/data/music_map.json` |
-| 中文大字点阵 | ✅ 新增 | `tui/make_glyphs.py` → `tui/data/glyphs.json` |
-| 3D WebGL 版 | ⚠️ 仍是半成品，本次未动 | `engine/`、`render/`、`docs/` |
+| 中文大字点阵（101 字） | ✅ | `tui/make_glyphs.py` → `tui/data/glyphs.json` |
+| 3D WebGL 版 | ⚠️ 仍是半成品，未动 | `engine/`、`render/`、`docs/` |
 
 ## 2. 运行方式
 
 ```bash
-python3 tui/lovestory.py --audio <你的 Love_Story.flac>   # 需要 ffplay 或 mpv 才有声音
-python3 tui/lovestory.py --mute                           # 只看画面
-python3 tui/lovestory.py --start 185 --audio ...          # 从转折处开始看
+python3 tui/lovestory.py --audio <你的 Love_Story.flac>            # 母体版；需要 ffplay 或 mpv 才有声音
+python3 tui/lovestory.py --edition classic --audio ...             # 经典版
+python3 tui/lovestory.py --mute --start 189                        # 只看画面，从转调处开始
 LS_CJK_FONT=/path/to/NotoSansCJKsc-Regular.otf \
-python3 tui/lovestory.py --export out.mp4 --audio ...     # 离线导出（需要 Pillow 和 ffmpeg）
+python3 tui/lovestory.py --export out.mp4 --audio ...              # 离线导出（需要 Pillow 和 ffmpeg）
 ```
 
 如果声音和画面对不上，用 `--sync 0.08` 调整画面延迟。按 `q` 退出。详细说明在 `tui/README.md`。
 
-## 3. 这一版改了什么
+## 3. 母体版（本轮）
+
+- **与你的分镜的对应**（按真实小节；转调实测在第 94 小节 3:09.75，不是 3:18，画面碎裂对准真实转调点）：
+  前奏 0–8 母体全景、只读金字塔、`System initialized. Read-only mode activated.` · 主歌一 8–24 总线假面舞会、Romeo 伪装 ping
+  穿行、四目相对、荧光脉冲、SYN/SYN-ACK、第 24 小节金色涟漪 · 预副歌+副歌一 24–40 Master_Firewall 威胁等级、红光频闪、
+  满屏 `WARNING: Access Denied`、巡逻光束分开两人、隔离罩 · 主歌二 40–56 深夜巡逻线、绿色字节序列"小石子"、端口 1989、
+  她滑下金字塔、废弃扇区并肩与拥抱 · 副歌二 56–74 大字 ROMEO/JULIET 每小节交替、全景/近景快切、红色泛滥、SIGKILL 恐惧、
+  防线压境、深渊吞噬、`Connection Lost` 淹没 · 桥段 74–94 深度包检测、未写完的校验码、死锁沼泽、隔离区、Tick、
+  `Connection Timeout` 弹窗、粒子变灰、`ALIVE_FLAG` 归零、闭眼等待格式化、天空裂缝 · 转调 94–102 系统重启抖动、天空碎裂、
+  Romeo 带 root 金色光环降临、红色警告逐个翻成绿色 `Override Successful`、单膝跪地、哈希戒指接入核心、她点下确认 ·
+  终章 102–114 两道光柱盘旋合并为 `main`、世界变白、代码花瓣 · 尾声 114– `return { status: "Happily Ever After" };`。
+- **歌词处理**：分镜里的核心台词投屏是歌词原句/改写，屏幕上用同一情境的原创系统文案替代（`Firewall bypass successful.`、
+  `Status: root 已批准 · 只读锁已解除`、`Merge pull request #1989 → main · never rollback`、`timestamp 2008-09-12 · fearless_mode = true`）。
+- **代码**：`tui/matrix/story.py`（60 条原创中文旁白按小节排程 + 章节表）、`tui/matrix/scenes.py`（符号人 `figure()`、全息窗
+  `holo()`、数据流/代码雨/金字塔/光束/裂缝/碎片/花瓣等母体原语、后期 `desaturate`/`tint`/`whiten`/抖动、八幕与剪辑表）。
+  播放器 `tui/lovestory.py` 新增 `--edition`；`core.py` 的大字字体补了 `J`；导出器背景改成按行成段绘制。
+- **颜文字只用 ASCII**（`(^_^)` 等），避免终端把"宽度不确定"字符按两格显示导致错位。
+
+## 4. 经典中文版（上一轮）
 
 - **中文叙事层 `tui/story.py`（新文件）**
   - 56 条原创中文旁白按小节排程，固定显示在底部两行（中文 + 英文小字），逐字打出。
@@ -50,7 +75,7 @@ python3 tui/lovestory.py --export out.mp4 --audio ...     # 离线导出（需�
   运行时仍然只依赖标准库。要加新的大字，把字加进 `CHARS` 重新生成即可。
 - **`tui/README.md`** 改为中文说明。
 
-## 4. 关键数据（未变）
+## 5. 关键数据（未变）
 
 - 歌曲 119.01 BPM，每拍 0.50416 秒，第一拍在 0.18993 秒，每小节 2.016627 秒。第 *n* 小节的开始时间是
   `0.18993 + 2.016627·n` 秒。
@@ -59,15 +84,18 @@ python3 tui/lovestory.py --export out.mp4 --audio ...     # 离线导出（需�
 - 本次用预览视频里的音轨重新核对过节拍网格：底鼓相对网格稳定在约 −30 ms（整首歌不漂移），所以网格没有改。
   如果你在真实终端里觉得画面略晚于鼓点，`--sync -0.03` 可以补偿。
 
-## 5. 已验证与未验证
+## 6. 已验证与未验证
 
-**已验证**
+**已验证（母体版）**
 - 全片每 0.25 秒一帧、五种终端尺寸（160×45、220×60、100×30、80×24、60×18）全部渲染无异常。
-- 绘制一帧平均 2.5 ms（160×45）/ 3.1 ms（220×60），最慢 13 ms，30 fps 有余。
-- 各章截图逐一检查（160×45 为主，220×60 和 100×30 抽查），修掉了标题与启动日志重叠、标题卡淡出残留黑块、
-  握手文字与标题卡冲突、"第一支舞"缺字等问题。
+- 绘制一帧平均 3.3 ms（160×45）/ 4.2 ms（220×60），最慢 14 ms，30 fps 有余。
+- 八幕共 31 个时间点截图逐一检查（160×45），修掉了全息窗压住颜文字脸、旧对话窗不消失、副歌二画面过空、合流时两人重叠、
+  60×18 下隔离区除零等问题。
 - 在伪终端里实际跑过实时播放器（静音、真彩色和 256 色各一次）：30 fps，按 `q` 在 10 ms 内干净退出并恢复主屏幕和光标。
 - 带歌曲音轨的完整离线导出成功（见第 1 节的预览视频）。
+
+**已验证（经典版，上一轮）**
+- 五种尺寸逐帧渲染无异常；一帧平均 2.5 ms；各章截图检查过；伪终端实跑与 `q` 退出通过。
 
 **未验证**
 - 没有在真实的真彩色终端里带声音实际播放过（容器里没有声卡）。
@@ -76,7 +104,7 @@ python3 tui/lovestory.py --export out.mp4 --audio ...     # 离线导出（需�
 - 导出器写死了 DejaVu Sans Mono 的几个常见路径；中文字体需要 `LS_CJK_FONT`（本次用的是 Noto Sans CJK SC，
   没有提交到仓库）。
 
-## 6. 3D 版的遗留情况（继续之前必须先看）
+## 7. 3D 版的遗留情况（继续之前必须先看）
 
 本次没有碰 3D 版。上一版交接里的情况仍然成立：
 - 能用的部分：渲染引擎、后期调色、双语字幕卡、纸雕维罗纳夜景、逐帧截取渲染流程；剪辑里只有 40 秒测试镜头。
@@ -85,17 +113,18 @@ python3 tui/lovestory.py --export out.mp4 --audio ...     # 离线导出（需�
 - 声音设计完全没做，只有 `docs/SOUND.md` 的时间表。
 - 3D 版的时间轴比歌曲整体晚 44 秒；软件渲染 1080p 每帧约 1.7 秒，整片约 3.5 小时。
 
-## 7. 注意事项
+## 8. 注意事项
 
-- **不要在任何地方出现歌词。** 所有旁白、日志、标题都是原创文字；`story.py` 的 `NARRATION` 表是唯一的文案来源，
-  改文案只改那里。
+- **不要在任何地方出现歌词。** 所有旁白、日志、标题都是原创文字；两版的文案分别只在 `tui/matrix/story.py` 和
+  `tui/story.py` 的 `NARRATION` 表里，改文案只改那里。上一轮就因为讨论歌词触发过内容过滤导致会话中断。
 - 歌曲和含歌曲的视频都不能提交，`.gitignore` 已经排除。公开发布或参赛需要另外取得歌曲授权。
 - `.claude/agents/mv-engineer.md` 是 3D 版的子 agent 配置，和终端版无关。
 
-## 8. 建议的下一步
+## 9. 建议的下一步
 
-1. 在 iTerm2 / WezTerm / kitty 里带声音完整看一遍，用 `--sync` 校准；重点看三处：第 12 小节涟漪相触、第 94 小节
-   转调提亮、第 97 小节"已连接"是否都落在鼓点上。
-2. 文案如需调整，只改 `story.py` 的 `NARRATION`（小节区间 + 中文 + 英文小字）。
+1. 在 iTerm2 / WezTerm / kitty 里带声音完整看一遍母体版，用 `--sync` 校准；重点看：第 24 小节金色涟漪、第 30 小节
+   满屏拒绝、第 94 小节天空碎裂与重启抖动、第 97 小节单膝跪地是否都落在鼓点上。
+2. 文案如需调整，只改 `tui/matrix/story.py` 的 `NARRATION`（小节区间 + 中文 + 英文小字）；表情和姿势在
+   `tui/matrix/scenes.py` 各幕里按小节切换（`face=` / `pose=`），字典 `FACES` / `POSES` 可以扩充。
 3. 需要原生 Windows 的话，给 `lovestory.py` 的按键读取加一个 `msvcrt` 分支，并在启动时打开虚拟终端模式。
 4. 3D 版是继续还是放弃仍待决定。

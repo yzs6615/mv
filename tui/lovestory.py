@@ -2,6 +2,7 @@
 """LOVE STORY — terminal edition.  A TUI / ASCII music video, played live in your terminal.
 
     python3 tui/lovestory.py --audio path/to/love_story.flac        # play with music (ffplay / mpv / afplay)
+    python3 tui/lovestory.py --edition classic --audio ...          # the older two-process edition
     python3 tui/lovestory.py --mute                                  # visuals only, same clock
     python3 tui/lovestory.py --audio song.flac --start 185           # jump to a moment (seconds)
     python3 tui/lovestory.py --export out.mp4 --audio song.flac      # offline render to video (needs Pillow + ffmpeg)
@@ -20,7 +21,14 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from core import Canvas, Music, WIDE_TAIL, data_path   # noqa: E402
-import scenes   # noqa: E402
+
+EDITIONS = {'matrix': 'matrix.scenes', 'classic': 'scenes'}
+
+
+def load_edition(name):
+    """each edition is a module with build_edit(music) and render(canvas, music, t, edit)"""
+    import importlib
+    return importlib.import_module(EDITIONS[name])
 
 CSI = '\x1b['
 
@@ -113,6 +121,7 @@ def start_audio(path, start):
 
 def play(args):
     m = Music(data_path('music_map.json'))
+    scenes = load_edition(args.edition)
     edit = scenes.build_edit(m)
     end = edit[-1][1]
     truecolor = args.color == 'true' or (args.color == 'auto' and os.environ.get('COLORTERM', '') in ('truecolor', '24bit'))
@@ -200,10 +209,18 @@ class Raster:
         img = Image.new('RGB', (self.W, self.H), (6, 7, 10))
         d = ImageDraw.Draw(img)
         for y in range(cv.h):
-            for x in range(cv.w):
-                g = cv.bg[y * cv.w + x]
-                if g is not None:
-                    d.rectangle([x * self.cw, y * self.chh, (x + 1) * self.cw - 1, (y + 1) * self.chh - 1], fill=g)
+            row = cv.bg[y * cv.w:(y + 1) * cv.w]
+            x = 0
+            while x < cv.w:
+                g = row[x]
+                if g is None:
+                    x += 1
+                    continue
+                x1 = x
+                while x1 + 1 < cv.w and row[x1 + 1] == g:
+                    x1 += 1
+                d.rectangle([x * self.cw, y * self.chh, (x1 + 1) * self.cw - 1, (y + 1) * self.chh - 1], fill=g)
+                x = x1 + 1
         for y in range(cv.h):
             x = 0
             while x < cv.w:
@@ -261,6 +278,7 @@ class Raster:
 
 def stills(args):
     m = Music(data_path('music_map.json'))
+    scenes = load_edition(args.edition)
     edit = scenes.build_edit(m)
     cols, rows = map(int, args.grid.split('x'))
     ras = Raster(cols, rows, args.font_size)
@@ -293,6 +311,7 @@ def stills(args):
 
 def export(args):
     m = Music(data_path('music_map.json'))
+    scenes = load_edition(args.edition)
     edit = scenes.build_edit(m)
     cols, rows = map(int, args.grid.split('x'))
     ras = Raster(cols, rows, args.font_size)
@@ -324,6 +343,8 @@ def export(args):
 
 def main():
     ap = argparse.ArgumentParser(description='LOVE STORY — terminal edition')
+    ap.add_argument('--edition', choices=sorted(EDITIONS), default='matrix',
+                    help='matrix: Core_Juliet / Patch_Romeo in the digital matrix (default); classic: the two-process edition')
     ap.add_argument('--audio', help='path to the song file (not included)')
     ap.add_argument('--mute', action='store_true')
     ap.add_argument('--start', type=float, default=0.0, help='start time in seconds')
