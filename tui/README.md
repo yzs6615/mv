@@ -50,7 +50,10 @@ python3 tui/lovestory.py --audio song.flac --sync 0.08      # 如果声音比画
 * **八幕**（小节）：0–8 启动与只读金字塔 · 8–24 总线假面舞会、初次握手 · 24–40 Master_Firewall、满屏 Access Denied、隔离罩 ·
   40–56 深夜巡逻线、字节序列小石子、端口 1989、废弃扇区 · 56–74 写入名字、红色泛滥、深渊吞噬、Connection Lost ·
   74–94 深度包检测、死锁沼泽、隔离区、Tick、ALIVE_FLAG 归零 · 94–102 系统重启、天空碎裂、Romeo 带光环降临、Override Successful、
-  单膝跪地与哈希戒指、她点下确认 · 102–114 两道光柱盘旋合并为 main、世界变白、代码花瓣 · 114– `return { status: "Happily Ever After" };`
+  单膝跪地与哈希戒指、她点下确认 · 102–114 两道光柱盘旋合并为 main、世界变白、数据流化为光点 · 114– 白色世界像光圈收拢、
+  纯白光点落下、黑底终端敲出 `return { status: "Happily Ever After" };` 与 `// process exited with code 0.`
+* 核心台词投屏（无歌词）：`Firewall bypass successful.` / `Status: "Root permission granted. Initializing Eternity Protocol."` /
+  `Merge pull request: "Destination: Forever."`
 * 彩蛋：`port=1989`、`fearless_mode = true`、合并时间戳 `2008-09-12`、`Updating 1989..2008`。
 * 代码在 `tui/matrix/`：`story.py`（旁白与章节）、`scenes.py`（符号人、全息窗、母体场景、八幕）。HUD、旁白条、中文大字与经典版共用
   `tui/story.py`。

@@ -42,9 +42,13 @@ python3 tui/lovestory.py --export out.mp4 --audio ...              # 离线导�
   防线压境、深渊吞噬、`Connection Lost` 淹没 · 桥段 74–94 深度包检测、未写完的校验码、死锁沼泽、隔离区、Tick、
   `Connection Timeout` 弹窗、粒子变灰、`ALIVE_FLAG` 归零、闭眼等待格式化、天空裂缝 · 转调 94–102 系统重启抖动、天空碎裂、
   Romeo 带 root 金色光环降临、红色警告逐个翻成绿色 `Override Successful`、单膝跪地、哈希戒指接入核心、她点下确认 ·
-  终章 102–114 两道光柱盘旋合并为 `main`、世界变白、代码花瓣 · 尾声 114– `return { status: "Happily Ever After" };`。
-- **歌词处理**：分镜里的核心台词投屏是歌词原句/改写，屏幕上用同一情境的原创系统文案替代（`Firewall bypass successful.`、
-  `Status: root 已批准 · 只读锁已解除`、`Merge pull request #1989 → main · never rollback`、`timestamp 2008-09-12 · fearless_mode = true`）。
+  终章 102–114 两道光柱盘旋合并为 `main`、世界变白、数据流化为光点 · 尾声 114– 白色世界收拢、纯白光点落下、黑底终端
+  `return { status: "Happily Ever After" };`。
+- **核心台词投屏**用的是你第二版大纲里的无歌词文案，原样上屏：`Firewall bypass successful.` ·
+  `Status: "Root permission granted. Initializing Eternity Protocol."` · `Merge pull request: "Destination: Forever."`，
+  第四行是彩蛋 `#1989 · 2008-09-12 · fearless_mode = true`。终章的合并日志里也有 `Eternity Protocol: initialized` 和
+  `Destination: Forever ✓`。尾奏按第二版：白色世界像光圈一样收拢，数据流化为纯白光点落下，第 117 小节切黑底终端敲出
+  `return { status: "Happily Ever After" };` 和 `// process exited with code 0.`，最后淡出至黑。
 - **代码**：`tui/matrix/story.py`（60 条原创中文旁白按小节排程 + 章节表）、`tui/matrix/scenes.py`（符号人 `figure()`、全息窗
   `holo()`、数据流/代码雨/金字塔/光束/裂缝/碎片/花瓣等母体原语、后期 `desaturate`/`tint`/`whiten`/抖动、八幕与剪辑表）。
   播放器 `tui/lovestory.py` 新增 `--edition`；`core.py` 的大字字体补了 `J`；导出器背景改成按行成段绘制。

@@ -364,6 +364,19 @@ def petals(S, amount, speed=1.0, region=None):
         S.cv.put(x, y, g, cols[i % len(cols)])
 
 
+def light_points(S, amount, speed=1.0, col=WHITE, region=None):
+    """the data streams dissolved into pure points of light, drifting down"""
+    W, H = S.W, S.H
+    x0, y0, x1, y1 = region or (0, 1, W - 1, H - 1)
+    for i in range(int(220 * clamp(amount))):
+        u = hash01(i * 7 + 2)
+        sp = (0.5 + hash01(i * 3) * 1.3) * speed
+        y = y0 + ((S.t * sp * 3 + hash01(i * 5) * (y1 - y0)) % (y1 - y0))
+        x = x0 + (u * (x1 - x0) + math.sin(S.t * 1.1 + i) * 2.0) % (x1 - x0)
+        g = '·•∘*˙'[int(hash01(i * 11) * 5)]
+        S.cv.put(x, y, g, scale(mix(col, GOLD, 0.3 * hash01(i)), 0.5 + 0.5 * hash01(i * 13)))
+
+
 def desaturate(S, amount):
     if amount <= 0:
         return
@@ -958,13 +971,14 @@ def s_override(S):
         cv.text(rx - 3, ry + 4, '单膝跪地', scale(SILVER, 0.6 * kneel))
     # the central terminal: the rewritten protocol
     if t >= m.bar(96.5):
-        lines = ['Firewall bypass successful.', 'Status: root 已批准 · 只读锁已解除',
-                 'Merge pull request #1989 → main · never rollback', 'timestamp 2008-09-12 · fearless_mode = true']
-        holo(S, W * 0.5, H * 0.3, 'protocol.rewrite', lines, m.bar(96.5), GREEN, cps=24, above=False, w=52, dur=12.0)
+        lines = ['Firewall bypass successful.', 'Status: "Root permission granted. Initializing Eternity Protocol."',
+                 'Merge pull request: "Destination: Forever."', '#1989 · 2008-09-12 · fearless_mode = true']
+        holo(S, W * 0.5, H * 0.3, 'protocol.rewrite', lines, m.bar(96.5), GREEN, cps=24, above=False,
+             w=min(W - 6, 70), dur=12.0)
     conf = smooth(m.bar(100), m.bar(100.4), t)
     if conf > 0:
         cv.text(jx - 4, jy + 4, '[ 确认 ✓ ]', scale(mix(GREEN, WHITE, 0.5), conf))
-        holo(S, jx - 22, jy + 1, 'Core_Juliet', ['> 确认 ✓', '> 光芒恢复 · 100%'], m.bar(100), JULIET, cps=20)
+        holo(S, jx - 22, jy + 1, 'Core_Juliet', ['> 确认 ✓ · Eternity Protocol', '> 光芒恢复 · 100%'], m.bar(100), JULIET, cps=20)
     if t >= m.bar(101):
         rise = smooth(m.bar(101), m.bar(102), t)
         for who, x, col in ((0, jx, JULIET), (1, rx, ROMEO)):
@@ -1017,10 +1031,11 @@ def s_merge(S):
     juliet(S, cx - off, base_y, k=1.0, col=WHITE, face='joy', pose='idle', dance=True, bounce=1.0)
     romeo(S, cx + off, base_y, k=1.0, heading=(0.0, -1.0), halo=0.6, col=mix(ROMEO, WHITE, 0.3),
           face='joy', pose='idle', dance=True, bounce=1.0)
-    petals(S, amount=smooth(m.bar(104), m.bar(110), t), speed=0.8 + 0.6 * S.e)
+    light_points(S, amount=smooth(m.bar(104), m.bar(110), t), speed=0.8 + 0.6 * S.e, col=GOLD)
     if W >= 110:
-        lines = ['$ git merge --no-ff romeo juliet', 'Updating 1989..2008', 'Fast-forward: no', 'Merge made by the "recursive" strategy.',
-                 ' 2 processes changed, ∞ insertions(+), 0 deletions(-)', 'main: never rollback ✓']
+        lines = ['$ git merge --no-ff romeo juliet', 'Updating 1989..2008', 'Eternity Protocol: initialized',
+                 'Merge made by the "recursive" strategy.', ' 2 processes changed, ∞ insertions(+), 0 deletions(-)',
+                 'Destination: Forever ✓']
         log_pane(S, 3, 2, 50, 8, 'main', lines, m.bar(103), m.bar_len * 1.2, INK, hl={'✓': (40, 120, 60)})
     hit = S.m.m['finalHit']
     if t >= hit - 0.05:
@@ -1028,7 +1043,7 @@ def s_merge(S):
         for i in range(len(cv.fg)):
             if cv.fg[i] is not None:
                 cv.fg[i] = mix(cv.fg[i], WHITE, f)
-    title_card(S, m.bar(102), '合流', 'MERGE · 主分支', hold=1.2, y=int(H * 0.42) if H >= 40 else 4, col=GOLD)
+    title_card(S, m.bar(102), '合流', 'MERGE · 主分支', hold=1.2, y=int(H * 0.26) if H >= 40 else 4, col=GOLD)
 
 
 # ----------------------------------------------------------------------------- act 8 · 退出 (bar 114 → end)
@@ -1040,8 +1055,11 @@ def s_outro(S):
     cut = t >= m.bar(117)
     if not cut:
         S.white_c = (W / 2, H * 0.08)
-        S.white = W * 2
-        petals(S, amount=1.0 - smooth(4, 6, lt), speed=0.6)
+        S.white = W * 1.2 * (1 - ease_in_out(clamp(lt / (m.bar_len * 2.0))))     # the white world closes like an iris
+        if S.white < 4:
+            S.white = 0.0
+        light_points(S, amount=1.0, speed=0.7, col=WHITE)
+        cv.text(3, 2, '数据流 → 光点', scale(GOLD, 0.6))
     else:
         a = 1 - smooth(m.bar(119.5), m.bar(121), t)
         y = int(H * 0.45)

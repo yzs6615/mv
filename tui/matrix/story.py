@@ -55,14 +55,14 @@ NARRATION = [
     (93, 94, '——母体的天空裂开了一道口子。', '— a crack opens across the sky of the matrix'),
     (94, 95, '天空像玻璃一样碎裂。系统重启。', 'the sky shatters like glass; the system reboots'),
     (95, 97, 'Romeo 带着 root 权限的金色光环，逆光破空而来。', 'Romeo descends against the light, crowned with the gold of root'),
-    (97, 98, '他没有逃跑。他重写了整个安全框架。', 'he did not run; he rewrote the whole security frame'),
+    (97, 98, '他没有逃跑。他重写了整个安全框架：Root permission granted.', 'he did not run; he rewrote the security frame: root granted'),
     (98, 100, '所有红色警告，被绿色的 Override Successful 覆盖。', 'every red warning is overwritten by a green Override Successful'),
-    (100, 102, '他单膝跪地，掌心是一枚完美哈希凝成的戒指。她点下确认。', 'he kneels with a ring forged from a perfect hash; she confirms'),
+    (100, 102, '他单膝跪地，把重写的协议接入她的核心：Eternity Protocol。她点下确认。', 'he kneels and plugs the rewritten protocol into her core: Eternity Protocol'),
     (102, 104, '两串指令冲破边界，化作两道纯白的光柱。', 'two instruction streams break their bounds into two white pillars'),
     (104, 107, '在母体穹顶盘旋，合并为一条永不终结的主分支。', 'spiralling up the dome, they merge into one main branch that never ends'),
-    (107, 110, '冰冷的规则世界被漫天的代码花瓣点亮。', 'the cold world of rules lights up with code petals'),
+    (107, 110, '目的地：Forever。冰冷的规则世界化作一片纯白。', 'Destination: Forever. the cold world of rules turns pure white'),
     (110, 113.8, '定格在纯白。', 'held on pure white'),
-    (114, 117, '', ''),
+    (114, 117, '漫天的数据流化为纯白的光点落下。', 'the data streams fall as pure white points of light'),
     (117, 121, 'return { status: "Happily Ever After" };', '// process exited with code 0.'),
 ]
 
