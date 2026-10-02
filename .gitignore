@@ -7,3 +7,7 @@ assets/*.mp3
 *.mov
 *.mkv
 __pycache__/
+# MG edition: song-derived text stays local, like the audio
+mg/data/lyrics.txt
+mg/data/lyrics.json
+mg/build/

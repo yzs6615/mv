@@ -7,17 +7,23 @@
   "scripts": {
     "analyze": "python3 analysis/analyze.py",
     "render": "node render/render.mjs",
-    "build": "bash build.sh"
+    "build": "bash build.sh",
+    "mg:fonts": "python3 mg/tools/build_fonts.py",
+    "mg:preview": "node mg/render.mjs --all --scale 0.5 --fps 30 --out mg/build/preview_half.mp4",
+    "mg:render": "node mg/render.mjs --all"
   },
   "dependencies": {
     "@fontsource/cinzel": "^5.0.0",
     "@fontsource/cormorant-garamond": "^5.0.0",
     "@fontsource/courier-prime": "^5.3.0",
+    "@fontsource/fraunces": "^5.3.0",
     "@fontsource/noto-serif-sc": "^5.0.0",
+    "lxgw-wenkai-webfont": "^1.7.0",
     "three": "0.186.1",
     "ws": "^8.22.0"
   },
   "devDependencies": {
+    "@napi-rs/canvas": "^1.0.10",
     "playwright": "^1.56.1"
   }
 }

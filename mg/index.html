@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>世界上唯一的花 · MG</title>
+<link rel="stylesheet" href="../node_modules/lxgw-wenkai-webfont/lxgwwenkai-bold.css">
+<link rel="stylesheet" href="../node_modules/lxgw-wenkai-webfont/lxgwwenkai-regular.css">
+<link rel="stylesheet" href="../node_modules/@fontsource/fraunces/latin-400.css">
+<link rel="stylesheet" href="../node_modules/@fontsource/fraunces/latin-600.css">
+<link rel="stylesheet" href="../node_modules/@fontsource/fraunces/latin-400-italic.css">
+<link rel="stylesheet" href="../node_modules/@fontsource/fraunces/latin-500-italic.css">
+<link rel="stylesheet" href="../node_modules/@fontsource/fraunces/latin-600-italic.css">
+<style>
+  html, body { margin: 0; height: 100%; background: #16171f; color: #e8e2d6; font: 14px/1.4 system-ui, sans-serif; }
+  #stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  canvas { max-width: 100vw; max-height: 100vh; aspect-ratio: 16 / 9; display: block; }
+  #ui { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 16px; display: flex; gap: 12px; align-items: center;
+        background: linear-gradient(transparent, rgba(0,0,0,.55)); opacity: 0; transition: opacity .3s; }
+  body:hover #ui, body.paused #ui { opacity: 1; }
+  #bar { flex: 1; accent-color: #ff6b5b; }
+  button { background: #ff6b5b; color: #fff; border: 0; border-radius: 999px; padding: 6px 14px; font-weight: 600; cursor: pointer; }
+  #hint { position: fixed; top: 12px; left: 16px; opacity: .7; }
+  body.render #ui, body.render #hint { display: none; }
+</style>
+</head>
+<body class="paused">
+<div id="stage"><canvas id="c"></canvas></div>
+<div id="hint">点击或按空格播放 · ←/→ 快退快进 5 秒</div>
+<div id="ui"><button id="play">播放</button><input id="bar" type="range" min="0" max="1000" value="0"><span id="time">0:00</span></div>
+<audio id="audio" src="../assets/song.mp3" preload="auto"></audio>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
