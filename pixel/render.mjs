@@ -127,7 +127,10 @@ async function concatAndEncode(files, out, t0, dur, audio) {
   const scale = parseInt(arg('scale', 4), 10);
   const args = ['-f', 'concat', '-safe', '0', '-i', list];
   if (audio) args.push('-ss', String(t0), '-t', String(dur), '-i', audio);
-  args.push('-vf', `scale=${W * scale}:${H * scale}:flags=neighbor,format=yuv420p`, '-c:v', 'libx264', '-preset', arg('preset', 'slow'), '-crf', String(arg('crf', 18)), '-tune', 'animation', '-r', String(FPS));
+  // nearest-neighbour upscale in RGB, then an explicit BT.709 conversion (tagged, so players do not guess)
+  args.push('-vf', `scale=${W * scale}:${H * scale}:flags=neighbor,scale=out_color_matrix=bt709:out_range=tv:flags=neighbor,format=yuv420p`,
+    '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-color_range', 'tv',
+    '-c:v', 'libx264', '-preset', arg('preset', 'slow'), '-crf', String(arg('crf', 18)), '-tune', 'animation', '-r', String(FPS));
   if (audio) args.push('-c:a', 'aac', '-b:a', '256k', '-shortest');
   args.push('-movflags', '+faststart', out);
   await ffmpeg(args);
