@@ -26,8 +26,11 @@ python3 tui/lovestory.py --audio song.flac --seed 1989      # 指定彩蛋组合
   GNOME Terminal），尺寸 ≥ 160×45 才有完整构图；≥ 60×18 都能播，支持实时缩放；`--color 256` 退回 256 色。
 * 终端字体需要包含中文字形（绝大多数中文环境的终端默认就有）。
 * **歌曲文件不包含在仓库里**，请自备。按 `q` 退出。实时播放目前只支持 macOS / Linux / WSL（用到 `termios`）。
-* 离线导出视频（需要 Pillow + ffmpeg）：`python3 tui/lovestory.py --export out.mp4 --audio song.flac`。
+* 离线导出视频（需要 Pillow + ffmpeg）：`python3 tui/lovestory.py --export out.mp4 --audio song.flac --export-fps 60`。
   导出时中文字体通过环境变量 `LS_CJK_FONT` 指定（例如 Noto Sans CJK 的 .otf/.ttc），否则中文会显示成方块。
+  实时播放默认 30 fps，`--fps 60` 更流畅（终端要跟得上）。
+* **成品**在 `release/`：`LoveStory_matrix_1600x900_60fps.mp4`（主版本）和 `LoveStory_matrix_720p.mp4`（手机用），
+  seed 1989，带歌曲音轨。
 
 ## 节奏 Pacing
 
@@ -70,6 +73,8 @@ python3 tui/lovestory.py --audio song.flac --seed 1989      # 指定彩蛋组合
   纯白光点落下、黑底终端敲出 `return { status: "Happily Ever After" };` 与 `// process exited with code 0.`
 * 核心台词投屏（无歌词）：`Firewall bypass successful.` / `Status: "Root permission granted. Initializing Eternity Protocol."` /
   `Merge pull request: "Destination: Forever."`
+* 第 112 小节合并时，金色和蓝色一起过渡成一种新的颜色（暮光紫 `UNION_NEW`）：两个人、主分支线、光环、光点、状态面板和
+  片尾的 `return` 行都跟着变。
 * 彩蛋：`port=1989`、`fearless_mode = true`、合并时间戳 `2008-09-12`、`Updating 1989..2008`。
 * 代码在 `tui/matrix/`：`story.py`（旁白与章节）、`scenes.py`（符号人、全息窗、母体场景、八幕）。HUD、旁白条、中文大字与经典版共用
   `tui/story.py`。

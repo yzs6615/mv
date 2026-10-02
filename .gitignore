@@ -7,3 +7,4 @@ assets/*.mp3
 *.mov
 *.mkv
 __pycache__/
+!release/*.mp4

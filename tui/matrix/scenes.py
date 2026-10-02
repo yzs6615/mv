@@ -26,6 +26,9 @@ WHITE = (252, 252, 255)
 GREEN = (96, 232, 136)
 WARM = (250, 246, 236)        # the world after the rewrite
 INK = (70, 54, 24)            # text on the white world
+UNION_NEW = (206, 160, 255)   # gold and blue become this together at the merge: twilight violet
+UNION_ON_WHITE = (118, 58, 206)
+PALE_UNION = (234, 222, 255)
 
 
 class Ctx:
@@ -46,6 +49,7 @@ class Ctx:
         self.figs = []            # figure boxes, kept visible on the white world
         self.status = None        # (juliet fields, romeo fields, corner) for the process panel
         self.ticker = None        # strings for the row-1 hex/log ticker
+        self.union = 0.0          # 0..1: how far gold and blue have become the one new colour (the merge)
 
     def bar(self, n):
         return self.m.bar(n)
@@ -271,18 +275,20 @@ def figure(S, x, y, face='smile', pose='idle', col=JULIET, k=1.0, aura=1.0, deca
             cv.put(gx, gy, '▒?#%'[int(hash01(i + int(t * 11)) * 4)], scale(GREY, 0.8))
     if halo > 0:
         hy_ = y - (4.6 if big else 3.4)
-        br.circle(x * 2 + 1, hy_ * 4 + 2, 9 * sz, scale(GOLD, 0.9 * halo), step=0.8)
+        br.circle(x * 2 + 1, hy_ * 4 + 2, 9 * sz, scale(mix(GOLD, UNION_NEW, S.union), 0.9 * halo), step=0.8)
         br.circle(x * 2 + 1, hy_ * 4 + 2, 7 * sz, scale(WHITE, 0.5 * halo), step=1.0)
 
 
 def juliet(S, x, y, k=1.0, decay=0.0, glitch=0.0, size=1.0, col=JULIET, core_on=True, face='smile', pose='idle',
            shiver=0.0, sway=0.0, bounce=0.0, dance=False):
+    col = mix(col, UNION_NEW, S.union)
     figure(S, x, y, face=face if core_on else 'sleep', pose=pose, col=col, k=k, aura=1.0, decay=decay, glitch=glitch,
            shiver=shiver, sway=sway, bounce=bounce, size=size, dance=dance, gender='f')
 
 
 def romeo(S, x, y, k=1.0, heading=(1.0, 0.0), size=1.0, halo=0.0, col=ROMEO, face='wink', pose='fly', shiver=0.0,
           sway=0.0, bounce=0.0, dance=False, decay=0.0, glitch=0.0):
+    col = mix(col, UNION_NEW, S.union)
     figure(S, x, y, face=face, pose=pose, col=col, k=k, aura=0.5, decay=decay, glitch=glitch, shiver=shiver, sway=sway,
            bounce=bounce, size=size, tail=heading, halo=halo, orbit=True, dance=dance, gender='m')
 
@@ -471,8 +477,8 @@ def whiten(S, cx, cy, radius):
         mx, my = (bx0 + bx1) // 2, (by0 + by1) // 2
         if not (0 <= mx < W and 1 <= my < S.H) or cv.bg[my * W + mx] != WARM:
             continue
-        ink = JULIET_ON_WHITE if gender == 'f' else ROMEO_ON_WHITE
-        pale = PALE_GOLD if gender == 'f' else PALE_BLUE
+        ink = mix(JULIET_ON_WHITE if gender == 'f' else ROMEO_ON_WHITE, UNION_ON_WHITE, S.union)
+        pale = mix(PALE_GOLD if gender == 'f' else PALE_BLUE, PALE_UNION, S.union)
         for y in range(max(1, by0), min(S.H, by1 + 1)):
             base = y * W
             for x in range(max(0, bx0), min(W, bx1 + 1)):
@@ -499,8 +505,8 @@ def draw_status(S):
     x0 = W - w - 2 if corner.endswith('r') else 2
     y0 = 2 if corner.startswith('t') else H - h - 7
     cv.box(x0, y0, x0 + w, y0 + h, scale(SILVER, 0.7), style='round', title='processes', title_col=mix(JULIET, ROMEO, 0.5))
-    jc = JULIET
-    rc = mix(ROMEO, WHITE, 0.2)
+    jc = mix(JULIET, UNION_NEW, S.union)
+    rc = mix(mix(ROMEO, WHITE, 0.2), UNION_NEW, S.union)
     cv.text(x0 + 2, y0 + 1, f"♀ Juliet  {j.get('perm', ''):<10} {j.get('state', ''):<10} ♥{j.get('hr', 119):>3}", jc)
     cv.text(x0 + 2, y0 + 2, f"♂ Romeo   {r.get('sig', ''):<10} {r.get('state', ''):<10} GC {r.get('gc', 0):>3}%", rc)
     cv.put(x0 + w - 2, y0 + 1, '●' if S.m.pulse(S.t, 8) > 0.5 else '○', jc)
@@ -1165,6 +1171,8 @@ def s_merge(S):
     S.white = W * 0.75 + lt * 30
     cx = W / 2
     bb = m.bar_at(t)
+    S.union = smooth(m.bar(112), m.bar(113.6), t)
+    uni = S.union
     # the orbit: a radial field slowly turning around the centre
     rot = lt * 0.25
     for i in range(36):
@@ -1173,7 +1181,7 @@ def s_merge(S):
             x, y = cx + math.cos(a) * r, H * 0.5 + math.sin(a) * r * 0.5
             if 1 <= y < H - 1 and cv.get(int(x), int(y)) == ' ':
                 cv.put(x, y, '·', scale(GOLD, 0.5))
-    light_points(S, amount=smooth(m.bar(104), m.bar(110), t), speed=0.8 + 0.6 * S.e, col=GOLD)
+    light_points(S, amount=smooth(m.bar(104), m.bar(110), t), speed=0.8 + 0.6 * S.e, col=mix(GOLD, UNION_NEW, uni))
     # the git graph, standing up: two branches climb, one commit per bar, and merge into main
     lane_j, lane_r = cx - 7, cx + 7
     step = max(2, int((H - 8) / 13))
@@ -1189,17 +1197,17 @@ def s_merge(S):
         y = y_base - step * k
         fresh = clamp(1 - (bb - bar_))                       # flash on its downbeat
         if lane == 'merge':
-            cv.text(lane_j, y + 1, '╰' + '─' * int(lane_r - lane_j - 1) + '╯', mix(GOLD, ROMEO, 0.5))
-            cv.put(cx, y + 1, '┬', WHITE)
-            cv.put(cx, y, '◉', mix(WHITE, GOLD, 0.5))
-            cv.text(cx + 3, y, label, mix(WHITE, GOLD, fresh * 0.7))
+            cv.text(lane_j, y + 1, '╰' + '─' * int(lane_r - lane_j - 1) + '╯', mix(mix(GOLD, ROMEO, 0.5), UNION_NEW, uni))
+            cv.put(cx, y + 1, '┬', mix(WHITE, UNION_NEW, uni))
+            cv.put(cx, y, '◉', mix(mix(WHITE, GOLD, 0.5), UNION_NEW, uni))
+            cv.text(cx + 3, y, label, mix(mix(WHITE, GOLD, fresh * 0.7), UNION_NEW, uni))
         elif lane == 'main':
             for yy in range(int(y) + 1, int(y_base - step * 10)):
-                cv.put(cx, yy, '║', GOLD)
-            cv.put(cx, y, '◉', WHITE)
-            cv.text(cx + 3, y, label, mix(WHITE, GOLD, fresh * 0.7))
-            cv.text(cx - 1, max(2, y - 2), '∞', scale(WHITE, 0.6 + 0.4 * S.m.pulse(t, 4)))
-            cv.put(cx, max(3, y - 1), '║', GOLD)
+                cv.put(cx, yy, '║', UNION_NEW)
+            cv.put(cx, y, '◉', mix(WHITE, UNION_NEW, 0.5))
+            cv.text(cx + 3, y, label, mix(UNION_NEW, WHITE, fresh * 0.7))
+            cv.text(cx - 1, max(2, y - 2), '∞', scale(mix(UNION_NEW, WHITE, 0.3), 0.6 + 0.4 * S.m.pulse(t, 4)))
+            cv.put(cx, max(3, y - 1), '║', UNION_NEW)
         elif lane == 'both':
             cv.put(lane_j, y, '●', mix(GOLD, WHITE, fresh))
             cv.put(lane_r, y, '●', mix(ROMEO, WHITE, fresh))
@@ -1216,10 +1224,15 @@ def s_merge(S):
     fy = y_base - step * min(kk, 9.5) - 2
     off = 7 - 4 * merged
     face = 'joy' if merged > 0.5 else 'smile'
-    juliet(S, lane_j - 1 + (lane_j - 1 - (cx - off)) * 0 + ((cx - off) - (lane_j - 1)) * merged, fy, k=1.0, col=WHITE,
+    juliet(S, lane_j - 1 + ((cx - off) - (lane_j - 1)) * merged, fy, k=1.0, col=JULIET,
            face=face, pose='up' if merged > 0.5 else 'idle', dance=merged > 0.5, bounce=merged > 0.5)
     romeo(S, lane_r + 1 + ((cx + off) - (lane_r + 1)) * merged, fy, k=1.0, heading=(0.0, -1.0), halo=0.6,
           col=mix(ROMEO, WHITE, 0.3), face=face, pose='up' if merged > 0.5 else 'idle', dance=merged > 0.5, bounce=merged > 0.5)
+    if uni > 0:
+        # the new colour spreads out from the merge point as a ring, then tints the whole world
+        R = uni * W * 0.7
+        S.br.circle(cx * 2, (y_base - step * 10) * 4, R * 2, scale(UNION_NEW, 0.9 * (1 - uni) + 0.2), step=1.0)
+        cv.text(cx - 9, max(2, int(y_base - step * 10) - 4), '金 + 蓝 → 一种新的颜色', mix(UNION_NEW, WHITE, 0.3))
     if W >= 110:
         lines = ['$ git merge --no-ff romeo juliet', 'Updating 1989..2008', 'Eternity Protocol: initialized',
                  'Merge made by the "recursive" strategy.', ' 2 processes changed, ∞ insertions(+), 0 deletions(-)',
@@ -1244,12 +1257,13 @@ def s_outro(S):
     W, H = S.W, S.H
     lt = t - m.bar(114)
     cut = t >= m.bar(117)
+    S.union = 1.0
     if not cut:
         S.white_c = (W / 2, H * 0.08)
         S.white = W * 1.2 * (1 - ease_in_out(clamp(lt / (m.bar_len * 2.0))))     # the white world closes like an iris
         if S.white < 4:
             S.white = 0.0
-        light_points(S, amount=1.0, speed=0.7, col=WHITE)
+        light_points(S, amount=1.0, speed=0.7, col=mix(WHITE, UNION_NEW, 0.55))
         cv.text(3, 2, '数据流 → 光点', scale(GOLD, 0.6))
     else:
         a = 1 - smooth(m.bar(119.5), m.bar(121), t)
@@ -1257,11 +1271,11 @@ def s_outro(S):
         t0 = m.bar(117) + 0.3
         s1 = typed('return { status: "Happily Ever After" };', t, t0, 16)
         s2 = typed('// process exited with code 0.', t, t0 + 3.2, 16)
-        cv.text(W / 2 - 22, y, s1, scale(GREEN, a))
+        cv.text(W / 2 - 22, y, s1, scale(UNION_NEW, a))
         cv.text(W / 2 - 22, y + 1, s2, scale(GREY, a))
         if cursor_on(S, 0.5):
             if not s2 and len(s1) < 40:
-                cv.put(W / 2 - 22 + len(s1), y, '_', scale(GREEN, a))
+                cv.put(W / 2 - 22 + len(s1), y, '_', scale(UNION_NEW, a))
             elif s2 and len(s2) < 30:
                 cv.put(W / 2 - 22 + len(s2), y + 1, '_', scale(GREY, a))
         if t >= m.bar(119):
@@ -1294,9 +1308,9 @@ def status_bar(S):
             chap = s
     cv.text(13, y, chap, scale(TEXT, 0.75))
     rel = 'Core_Juliet ⇄ Patch_Romeo · main' if ok else 'Core_Juliet ✕ Patch_Romeo · read-only'
-    cv.text(W - text_width(rel) - 12, y, rel, GREEN if ok else scale(RED, 0.75))
+    cv.text(W - text_width(rel) - 12, y, rel, mix(GREEN, UNION_NEW, S.union) if ok else scale(RED, 0.75))
     beat = m.pulse(t, 8) if t > m.t0 else 0
-    cv.put(W - 10, y, '♥', mix(DIM, mix(ROMEO, JULIET, 0.5), beat))
+    cv.put(W - 10, y, '♥', mix(DIM, mix(mix(ROMEO, JULIET, 0.5), UNION_NEW, S.union), beat))
     mm, ss = divmod(max(0.0, t), 60)
     cv.text(W - 8, y, f'{int(mm):02d}:{ss:04.1f}', scale(GREY, 0.7))
 
