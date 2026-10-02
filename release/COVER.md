@@ -38,3 +38,10 @@
 ```bash
 LS_CJK_FONT=/path/to/NotoSansCJKsc-Regular.otf python3 tui/matrix/cover.py release/cover.png
 ```
+
+## 分区与标签（B 站）
+
+- 分区：音乐 → MV（自制；音乐注明来源）。备选：知识 → 野生技术协会。
+- 标签（≤10）：Love Story · Taylor Swift · 泰勒斯威夫特 · MV · 终端 · ASCII · 代码艺术 · 程序员 · 赛博朋克 · Python
+- 备选：彩蛋 · 节拍同步 · 音乐可视化 · 字符画 · 罗密欧与朱丽叶
+- 简介末尾：音乐版权归原作者所有，本视频为非商业的粉丝创作；画面代码开源。
