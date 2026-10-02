@@ -10,6 +10,7 @@ from core import (GREY, DIM, TEXT, RED, OK, UNION, FONT, big_text, big_width, cl
                   mix, scale, smooth, text_width, Braille)
 from story import big_zh, big_zh_width, draw_hud, draw_narration, energy, key_lift, kick, title_card
 from matrix.story import NARRATION, CHAPTERS
+from matrix import eggs
 
 # ----------------------------------------------------------------------------- palette
 
@@ -497,9 +498,9 @@ def draw_status(S):
     w, h = 50, 3
     x0 = W - w - 2 if corner.endswith('r') else 2
     y0 = 2 if corner.startswith('t') else H - h - 7
-    cv.box(x0, y0, x0 + w, y0 + h, scale(GREY, 0.6), style='round', title='processes', title_col=scale(GREY, 0.9))
-    jc = scale(JULIET, 0.9)
-    rc = scale(ROMEO, 1.0)
+    cv.box(x0, y0, x0 + w, y0 + h, scale(SILVER, 0.7), style='round', title='processes', title_col=mix(JULIET, ROMEO, 0.5))
+    jc = JULIET
+    rc = mix(ROMEO, WHITE, 0.2)
     cv.text(x0 + 2, y0 + 1, f"♀ Juliet  {j.get('perm', ''):<10} {j.get('state', ''):<10} ♥{j.get('hr', 119):>3}", jc)
     cv.text(x0 + 2, y0 + 2, f"♂ Romeo   {r.get('sig', ''):<10} {r.get('state', ''):<10} GC {r.get('gc', 0):>3}%", rc)
     cv.put(x0 + w - 2, y0 + 1, '●' if S.m.pulse(S.t, 8) > 0.5 else '○', jc)
@@ -515,8 +516,8 @@ def draw_ticker(S):
     body = (body + '   ·   ') * (1 + (W * 2) // max(1, text_width(body)))
     off = (e8 * 3) % max(1, text_width(body) // 2)
     cv.fill(0, 1, W - 1, 1, ' ', None)
-    cv.text(-off, 1, body, scale(mix(GREY, BLUE_DIM, 0.3), 0.75))
-    cv.text(0, 1, '▶', scale(GREY, 0.6))
+    cv.text(-off, 1, body, scale((90, 225, 230), 0.85))
+    cv.text(0, 1, '▶', scale((90, 225, 230), 0.9))
 
 
 def hexes(seed, n=6):
@@ -1306,10 +1307,12 @@ def render(cv, m, t, edit):
     if cv.w < 60 or cv.h < 18:
         cv.center(cv.h // 2, '请把终端放大（至少 60×18）', TEXT)
         return S
+    eggs.draw_eggs(S, 'bg')
     for a, b, fn in edit:
         if a <= t < b:
             fn(S)
             break
+    eggs.draw_eggs(S, 'fg')
     S.br.draw(cv)
     if S.shake > 0:
         fr = int(t * 24)

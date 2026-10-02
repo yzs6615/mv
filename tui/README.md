@@ -19,6 +19,7 @@ python3 tui/lovestory.py --edition classic --audio song.flac # 经典版
 python3 tui/lovestory.py --mute                             # 只看画面
 python3 tui/lovestory.py --audio song.flac --start 185      # 从转折处开始
 python3 tui/lovestory.py --audio song.flac --sync 0.08      # 如果声音比画面晚，给画面加延迟
+python3 tui/lovestory.py --audio song.flac --seed 1989      # 指定彩蛋组合（默认每次随机）
 ```
 
 * 实时播放只依赖 Python 3 标准库。请用真彩色终端（iTerm2、WezTerm、kitty、Windows Terminal、VS Code、
@@ -50,6 +51,12 @@ python3 tui/lovestory.py --audio song.flac --sync 0.08      # 如果声音比画
   墨色数据流混在一起。
 * **常驻信息层**：右上角 `processes` 面板实时显示两个进程的权限、状态、心跳和 GC 风险（随剧情变），第 1 行是按八分音符
   滚动的十六进制日志条，每幕内容不同。
+* **彩蛋层（`tui/matrix/eggs.py`）**：整首歌里始终有 5–12 个小东西在屏幕各处冒出来，副歌更多：45 种系统弹窗（cron、mail、
+  fortune、ad、poll、git、lover.sock、midnights.service、folklore.log、speak_now、reputation、calendar 2008-09-12、
+  "你发现了一个彩蛋 #n" …），24 种路过的 NPC 小人（`<(^_^<)` kirby_thread、`=^.^=` cat、`(o_O)` watchdog、`*bug*`、
+  `(^.^) <3 (^.^)` npc_couple …），31 条代码注释（`// TODO: 问她`、`<!-- 不要在这里出现歌词 -->`、`// 换个 --seed 再看一遍` …），
+  14 个 ASCII 印章（猫、心、戒指、信封、兔子、二维码 …），8 种会动的迷你面板（示波器、VU 表、生命游戏、乒乓、月相、母体时钟、
+  中文数字雨、贪吃蛇）。`--seed N` 换一套组合：实时播放默认每次随机，导出和截图默认 0。
 * **情绪用节奏和运镜表达**：高兴时随拍蹦跳、反拍举手；害怕时按十六分音符发抖；悲伤时缓慢左右漂移；每个下拍眨一次眼。
   警报、鼓点、重启时整屏抖动（`Ctx.shake`），桥段逐渐去色（`desaturate`），警报时整屏泛红（`tint`）。
 * **对话是头顶的全息终端窗**（`holo()`）：逐字打出，`_` 光标按拍闪烁，几秒后淡出。

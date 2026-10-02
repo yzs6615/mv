@@ -345,6 +345,9 @@ def main():
     ap = argparse.ArgumentParser(description='LOVE STORY — terminal edition')
     ap.add_argument('--edition', choices=sorted(EDITIONS), default='matrix',
                     help='matrix: Core_Juliet / Patch_Romeo in the digital matrix (default); classic: the two-process edition')
+    ap.add_argument('--seed', type=int, default=None,
+                    help='easter-egg seed (matrix edition): a different seed gives a different set of pop-ups, walkers and panels; '
+                         'default: random for live play, 0 for --stills/--export')
     ap.add_argument('--audio', help='path to the song file (not included)')
     ap.add_argument('--mute', action='store_true')
     ap.add_argument('--start', type=float, default=0.0, help='start time in seconds')
@@ -360,6 +363,12 @@ def main():
     ap.add_argument('--grid', default='160x45', help='columns x rows for offline rendering')
     ap.add_argument('--font-size', type=int, default=16)
     args = ap.parse_args()
+    seed = args.seed if args.seed is not None else (0 if (args.stills or args.export) else int(time.time()) % 100000)
+    try:
+        from matrix import eggs as _eggs
+        _eggs.set_seed(seed)
+    except ImportError:
+        pass
     if args.stills:
         stills(args)
     elif args.export:
