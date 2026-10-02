@@ -189,12 +189,13 @@ export default (ctx) => {
     petals(g, tt, { n: 60, drift: 12 });
   }
 
-  // staff roll blocks, two bars each
+  // staff roll blocks
   const CREDITS = [
-    ['STAFF', ''], ['原曲', '槇原敬之'], ['中文词', '林明阳'], ['演唱', 'SMAP'],
+    ['STAFF', ''], ['原曲', '槇原敬之'], ['中文词', '林明阳'],
     ['主演', '园丁'], ['共演', '灰色市民  ×∞'], ['画面 · 音效', '全部由代码绘制'], ['花', '没有两朵一样'],
   ];
-  const bar = m.beat * 4;
+  // the blocks share the la-la section evenly
+  const SLOT = (T_BACK - 0.3 - T_LA) / CREDITS.length;
   return {
     id: 'finale', t0: T0, t1: T_END + 1,
     enter: { type: 'mosaic', dur: 0.5 },
@@ -204,10 +205,10 @@ export default (ctx) => {
       const tt = Math.min(t, T_HIT);
       // credits in the sky
       if (tt > T_LA && tt < T_BACK - 0.3) {
-        const k = Math.floor((tt - T_LA) / (bar * 1.65));
+        const k = Math.floor((tt - T_LA) / SLOT);
         const c = CREDITS[Math.min(k, CREDITS.length - 1)];
-        const a = tt - T_LA - k * bar * 1.65;
-        const vis = a > 0.15 && a < bar * 1.65 - 0.25;
+        const a = tt - T_LA - k * SLOT;
+        const vis = a > 0.15 && a < SLOT - 0.25;
         if (vis && k < CREDITS.length) {
           const n = Math.floor((a - 0.15) * 12);
           text(g, [...c[0]].slice(0, n).join(''), g.W / 2, 214, { align: 'center', color: P.yellow, outline: P.ink, shadow: P.ink, font: /[A-Z]/.test(c[0]) ? 'en' : 'zh' });
