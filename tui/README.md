@@ -8,13 +8,13 @@
 
 | 版本 | 参数 | 主角 | 一句话 |
 |---|---|---|---|
-| **母体版（默认）** | `--edition matrix` | Core_Juliet（纯白淡金，只读金字塔）与 Patch_Romeo（深蓝银色，开源沙盒探针） | 两段有自主意识的代码在规则统治的数字母体里；冷蓝与猩红压抑三分钟，转调时天空碎裂、世界变白 |
+| **永恒协议版（默认）** | `--edition eternity` | Core_Juliet（纯白淡金，只读金字塔）与 Patch_Romeo（深蓝银色，开源沙盒探针） | 两段有自主意识的代码在规则统治的数字母体里；冷蓝与猩红压抑三分钟，转调时天空碎裂、世界变白 |
 | 经典版 | `--edition classic` | 进程 A（琥珀，`montague.net`）与 进程 B（玫瑰，`capulet.net`） | 两个被防火墙隔开的进程完成握手；无人物，只有光点、数据包和窗口 |
 
 ## 运行 Run
 
 ```bash
-python3 tui/lovestory.py --audio /path/to/Love_Story.flac   # 母体版，需要 ffplay（ffmpeg）或 mpv 才有声音
+python3 tui/lovestory.py --audio /path/to/Love_Story.flac   # 永恒协议版，需要 ffplay（ffmpeg）或 mpv 才有声音
 python3 tui/lovestory.py --edition classic --audio song.flac # 经典版
 python3 tui/lovestory.py --mute                             # 只看画面
 python3 tui/lovestory.py --audio song.flac --start 185      # 从转折处开始
@@ -29,7 +29,7 @@ python3 tui/lovestory.py --audio song.flac --seed 1989      # 指定彩蛋组合
 * 离线导出视频（需要 Pillow + ffmpeg）：`python3 tui/lovestory.py --export out.mp4 --audio song.flac --export-fps 60`。
   导出时中文字体通过环境变量 `LS_CJK_FONT` 指定（例如 Noto Sans CJK 的 .otf/.ttc），否则中文会显示成方块。
   实时播放默认 30 fps，`--fps 60` 更流畅（终端要跟得上）。
-* **成品**在 `release/`：`LoveStory_matrix_1600x900_60fps.mp4`（主版本）和 `LoveStory_matrix_720p.mp4`（手机用），
+* **成品**在 `release/`：`LoveStory_eternity_1600x900_60fps.mp4`（主版本）和 `LoveStory_eternity_720p.mp4`（手机用），
   seed 1989，带歌曲音轨。
 
 ## 节奏 Pacing
@@ -43,7 +43,7 @@ python3 tui/lovestory.py --audio song.flac --seed 1989      # 指定彩蛋组合
 * 顶部 HUD：当前段落名、按段落比例画出的歌曲结构进度条（当前段落随拍闪烁，`┃` 标记转调位置）、小节数、
   四拍指示 `●○○○`、BPM、调性。底部两行是中文旁白和英文小字；最底一行是状态栏（章节、连接状态、心跳、时间）。
 
-## 母体版 Matrix edition
+## 永恒协议版 Eternity Protocol edition
 
 * **角色是符号人，不是人脸**：头部是颜文字（`(-_-)` 冷漠、`(o_o)` 好奇、`(^_^)` 微笑、`(^3^)` 爱、`(>_<)` 恐惧、
   `(;_;)`/`(T_T)` 哭、`(x_x)` 消亡、`(^o^)` 狂喜），肢体是 `/|\`、`\|/`、`/|─`（伸手）、`-|\`（潜行）、`/ _`（单膝跪地）
@@ -105,7 +105,7 @@ python3 tui/lovestory.py --audio song.flac --seed 1989      # 指定彩蛋组合
 * `core.py`：画布（支持全角字符）、盲文 2×4 子格图层、ASCII 大字、节拍时钟
 * `story.py`：中文叙事层——段落名与能量、旁白表、HUD、中文大字（点阵）和章节标题卡
 * `scenes.py`：经典版的 16 个场景和剪辑表，每一帧只由歌曲时间决定
-* `matrix/story.py`、`matrix/scenes.py`：母体版的旁白、符号人、全息窗和八幕
+* `matrix/story.py`、`matrix/scenes.py`：永恒协议版的旁白、符号人、全息窗和八幕
 * `lovestory.py`：实时播放器（逐行差分 ANSI 输出、音频同步）和离线栅格化/导出器
 * `make_glyphs.py`：用 Pillow 和一个中文字体预渲染 `data/glyphs.json`（运行时不需要 Pillow）
 * `data/music_map.json`：节拍网格、小节、段落和包络（由 `analysis/analyze.py` 生成）

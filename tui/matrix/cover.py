@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the cover image for the matrix edition: one frame composed from the same primitives as the video.
+"""Render the cover image for the Eternity Protocol edition: one frame composed from the same primitives as the video.
 
     LS_CJK_FONT=/path/to/NotoSansCJKsc-Regular.otf python3 tui/matrix/cover.py release/cover.png
 """
@@ -34,8 +34,8 @@ def compose(cols=160, rows=45):
     # title block
     x0 = 5
     big_text(cv, x0, 3, 'LOVE STORY', mix(sc.GOLD, sc.WHITE, 0.25), shadow=scale(sc.GOLD, 0.3))
-    big_zh(cv, x0, 10, '母体版', sc.UNION_NEW, size=16, clear=False)
-    cv.text(x0 + big_zh_width('母体版') + 3, 14, 'matrix edition', scale(sc.UNION_NEW, 0.8))
+    big_zh(cv, x0, 10, '永恒协议', sc.UNION_NEW, size=16, clear=False)
+    cv.text(x0 + big_zh_width('永恒协议') + 3, 14, 'Eternity Protocol', scale(sc.UNION_NEW, 0.8))
     cv.text(x0, 19, '两段代码 · 一个心跳', sc.SILVER)
     cv.text(x0, 20, 'Core_Juliet ♀  ×  Patch_Romeo ♂', mix(sc.JULIET, sc.ROMEO, 0.5))
     cv.text(x0, 22, '终端 ASCII 音乐视频 · 119 bpm · 第 94 小节转调 · 100+ 彩蛋', scale(GREY, 1.0))

@@ -1,9 +1,9 @@
-# 任务交接：LOVE STORY MV（终端版：母体版 + 经典中文版）
+# 任务交接：LOVE STORY MV（终端版：永恒协议版 + 经典中文版）
 
 分支 `claude/love-story-mv-handoff-tee7q5`。仓库里现在有两个终端版本，用 `--edition` 切换，代码共用播放器、
 导出器、HUD、旁白条和中文大字：
 
-- **母体版 `matrix`（默认，最新）**：按你的分镜做的 Core_Juliet / Patch_Romeo 版本。角色是"颜文字 + 符号肢体 + 光粒"
+- **永恒协议版 `matrix`（默认，最新）**：按你的分镜做的 Core_Juliet / Patch_Romeo 版本。角色是"颜文字 + 符号肢体 + 光粒"
   的符号人，情绪靠节奏（随拍蹦跳、十六分音符发抖、慢速漂移、下拍眨眼）和运镜（整屏抖动、去色、泛红、转调时天空碎裂）
   表达，对话是头顶的全息终端窗。
 - **经典版 `classic`**：上一轮的中文叙事版（进程 A / 进程 B），保留不动。
@@ -12,9 +12,9 @@
 
 | 部分 | 状态 | 位置 |
 |---|---|---|
-| **母体版 MV（当前主交付）** | ✅ 已完成，已推送 | `tui/matrix/` |
+| **永恒协议版 MV（当前主交付）** | ✅ 已完成，已推送 | `tui/matrix/` |
 | 经典中文版 MV | ✅ 保留 | `tui/scenes.py` |
-| **母体版成品视频**（含歌曲音轨，4:04，60 fps，seed 1989） | ✅ 已提交到仓库 | `release/LoveStory_matrix_1600x900_60fps.mp4`（主版本）、`release/LoveStory_matrix_720p.mp4`（手机用） |
+| **永恒协议版成品视频**（含歌曲音轨，4:04，60 fps，seed 1989） | ✅ 已提交到仓库 | `release/LoveStory_eternity_1600x900_60fps.mp4`（主版本）、`release/LoveStory_eternity_720p.mp4`（手机用） |
 | 经典版预览视频 | ✅ 上一轮已发 | 会话附件 `LoveStory_terminal_zh_720p.mp4` |
 | 音乐分析（节拍、段落、转调） | ✅ 沿用 | `analysis/analyze.py` → `tui/data/music_map.json` |
 | 中文大字点阵（101 字） | ✅ | `tui/make_glyphs.py` → `tui/data/glyphs.json` |
@@ -23,7 +23,7 @@
 ## 2. 运行方式
 
 ```bash
-python3 tui/lovestory.py --audio <你的 Love_Story.flac>            # 母体版；需要 ffplay 或 mpv 才有声音
+python3 tui/lovestory.py --audio <你的 Love_Story.flac>            # 永恒协议版；需要 ffplay 或 mpv 才有声音
 python3 tui/lovestory.py --edition classic --audio ...             # 经典版
 python3 tui/lovestory.py --mute --start 189                        # 只看画面，从转调处开始
 LS_CJK_FONT=/path/to/NotoSansCJKsc-Regular.otf \
@@ -32,7 +32,7 @@ python3 tui/lovestory.py --export out.mp4 --audio ...              # 离线导�
 
 如果声音和画面对不上，用 `--sync 0.08` 调整画面延迟。按 `q` 退出。详细说明在 `tui/README.md`。
 
-## 3. 母体版（本轮）
+## 3. 永恒协议版（本轮）
 
 - **与你的分镜的对应**（按真实小节；转调实测在第 94 小节 3:09.75，不是 3:18，画面碎裂对准真实转调点）：
   前奏 0–8 母体全景、只读金字塔、`System initialized. Read-only mode activated.` · 主歌一 8–24 总线假面舞会、Romeo 伪装 ping
@@ -110,7 +110,7 @@ python3 tui/lovestory.py --export out.mp4 --audio ...              # 离线导�
 
 ## 6. 已验证与未验证
 
-**已验证（母体版）**
+**已验证（永恒协议版）**
 - 全片每 0.25 秒一帧、五种终端尺寸（160×45、220×60、100×30、80×24、60×18）全部渲染无异常。
 - 绘制一帧平均 3.3 ms（160×45）/ 4.2 ms（220×60），最慢 14 ms，30 fps 有余。
 - 八幕共 31 个时间点截图逐一检查（160×45），修掉了全息窗压住颜文字脸、旧对话窗不消失、副歌二画面过空、合流时两人重叠、
@@ -149,7 +149,7 @@ python3 tui/lovestory.py --export out.mp4 --audio ...              # 离线导�
 
 ## 9. 建议的下一步
 
-1. 在 iTerm2 / WezTerm / kitty 里带声音完整看一遍母体版，用 `--sync` 校准；重点看：第 24 小节金色涟漪、第 30 小节
+1. 在 iTerm2 / WezTerm / kitty 里带声音完整看一遍永恒协议版，用 `--sync` 校准；重点看：第 24 小节金色涟漪、第 30 小节
    满屏拒绝、第 94 小节天空碎裂与重启抖动、第 97 小节单膝跪地是否都落在鼓点上。
 2. 文案如需调整，只改 `tui/matrix/story.py` 的 `NARRATION`（小节区间 + 中文 + 英文小字）；表情和姿势在
    `tui/matrix/scenes.py` 各幕里按小节切换（`face=` / `pose=`），字典 `FACES` / `POSES` 可以扩充。

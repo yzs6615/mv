@@ -579,7 +579,7 @@ def s_intro(S):
         if len(s1) < 46 and cursor_on(S, 0.5):
             cv.put((W - 46) // 2 + len(s1), y, '_', SILVER)
         cv.center(y + 1, typed('系统已初始化。只读模式已激活。', t, t1 + 1.6, 10), scale(SILVER, 0.6 * (1 - smooth(m.bar(6.5), m.bar(7.5), t))))
-    cv.text(2, 2, 'LOVE STORY · 母体版', scale(SILVER, 0.6))
+    cv.text(2, 2, 'LOVE STORY · 永恒协议版 · Eternity Protocol', scale(SILVER, 0.6))
     cv.text(2, 3, typed('MATRIX v1989 · 全球数据同步周期 · day 1', t, 0.3, 24), scale(GREY, 0.8))
     cv.text(2, 4, typed('fearless_mode = true', t, m.bar(2), 20), scale(BLUE, 0.6))
     info(S, {'perm': 'read-only', 'state': 'idle', 'hr': 72}, {'sig': 'none', 'state': 'hidden', 'gc': 5},

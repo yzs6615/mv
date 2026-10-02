@@ -22,7 +22,7 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from core import Canvas, Music, WIDE_TAIL, data_path   # noqa: E402
 
-EDITIONS = {'matrix': 'matrix.scenes', 'classic': 'scenes'}
+EDITIONS = {'eternity': 'matrix.scenes', 'matrix': 'matrix.scenes', 'classic': 'scenes'}
 
 
 def load_edition(name):
@@ -343,8 +343,8 @@ def export(args):
 
 def main():
     ap = argparse.ArgumentParser(description='LOVE STORY — terminal edition')
-    ap.add_argument('--edition', choices=sorted(EDITIONS), default='matrix',
-                    help='matrix: Core_Juliet / Patch_Romeo in the digital matrix (default); classic: the two-process edition')
+    ap.add_argument('--edition', choices=sorted(EDITIONS), default='eternity',
+                    help='eternity: the Eternity Protocol edition, Core_Juliet / Patch_Romeo (default; matrix is an alias); classic: the two-process edition')
     ap.add_argument('--seed', type=int, default=None,
                     help='easter-egg seed (matrix edition): a different seed gives a different set of pop-ups, walkers and panels; '
                          'default: random for live play, 0 for --stills/--export')

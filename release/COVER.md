@@ -1,9 +1,9 @@
-# 发布文案 · LOVE STORY 母体版
+# 发布文案 · LOVE STORY 永恒协议版
 
 ## 标题（三选一，推荐第一个）
 
 1. **用终端字符重做《Love Story》：两段代码在第 94 小节转调时，改写了整个母体**
-2. 《爱情故事 · 母体版》—— 只读进程 × 未签名补丁，一次未经授权的握手
+2. 《爱情故事 · 永恒协议》—— 只读进程 × 未签名补丁，一次未经授权的握手
 3. LOVE STORY · 终端 ASCII 音乐视频 | Core_Juliet 与 Patch_Romeo 的 4 分钟
 
 ## 简介
@@ -33,7 +33,7 @@
 ## 封面
 
 `release/cover.png`（1600×900）。由 `tui/matrix/cover.py` 用视频同一套字符世界渲染：左边冷蓝母体里的 Romeo，右边碎裂后的白色世界里
-塔顶的 Juliet，中间一次握手；标题 LOVE STORY · 母体版。重新生成：
+塔顶的 Juliet，中间一次握手；标题 LOVE STORY · 永恒协议。重新生成：
 
 ```bash
 LS_CJK_FONT=/path/to/NotoSansCJKsc-Regular.otf python3 tui/matrix/cover.py release/cover.png
