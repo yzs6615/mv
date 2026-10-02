@@ -350,6 +350,7 @@ export class Finale extends Scene {
     const credits = [
       ['《世界上唯一的花》中文版', 'Sekai ni Hitotsu Dake no Hana · Chinese version'],
       ['原曲作词·作曲  槇原敬之', '中文填词  林明阳'],
+      ['翻唱', '未来miraii'],
       ['MG 动画 · 每一帧都由代码绘制', 'Canvas 2D · 99 BPM · 60 fps'],
       [`本片出现的 ${this.flowerCount} 朵花`, '各由一个种子数生成，没有两朵完全相同'],
       ['Every flower in this film', 'grew from its own seed.'],

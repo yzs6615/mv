@@ -191,7 +191,7 @@ export default (ctx) => {
 
   // staff roll blocks
   const CREDITS = [
-    ['STAFF', ''], ['原曲', '槇原敬之'], ['中文词', '林明阳'],
+    ['STAFF', ''], ['原曲', '槇原敬之'], ['中文词', '林明阳'], ['翻唱', '未来miraii'],
     ['主演', '园丁'], ['共演', '灰色市民  ×∞'], ['画面 · 音效', '全部由代码绘制'], ['花', '没有两朵一样'],
   ];
   // the blocks share the la-la section evenly
