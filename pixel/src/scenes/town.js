@@ -53,9 +53,15 @@ export default (ctx) => {
 
   // crowd: lockstep marchers in two lanes
   const crowd = [];
+  const marchX = (p, t) => { const x = p.x0 + p.v * (t - T_WALK); return ((x - 100) % 1400 + 1400) % 1400 + 100; };
+  const T_EMPTY = T_ZOOM1 + 0.5; // the street in front of the shop is empty from here on
   for (let i = 0; i < 16; i++) {
     const lane = i % 3 === 0 ? 1 : 0;
-    crowd.push({ x0: 120 + i * 83 + Math.floor(hash2(i, 3) * 20), lane, v: -26, brief: i % 2 === 0 });
+    const p = { x0: 120 + i * 83 + Math.floor(hash2(i, 3) * 20), lane, v: -26, brief: i % 2 === 0 };
+    // the close-up shows x 788..1028: anyone there at T_EMPTY would vanish in plain sight
+    const xc = marchX(p, T_EMPTY);
+    if (xc > 788 - 24 && xc < 1028 + 24) continue;
+    crowd.push(p);
   }
   // the one who bumps him walks in his lane and reaches him at T_BUMP
   const bumper = { lane: 2, x: (t) => bumpX + 9 - (t - T_BUMP) * 26 };
@@ -164,8 +170,16 @@ export default (ctx) => {
     // door with the seed tray behind its glass
     g.rect(DOOR.x - 2, DOOR.y - 2, DOOR.w + 4, DOOR.h + 2, P.brown);
     const open = t > T_TOSS - 0.3 && t < T_LAND + 0.6;
-    g.rect(DOOR.x, DOOR.y, DOOR.w, DOOR.h, open ? P.ink : P.g4);
-    if (!open) {
+    // a buyer going in (at tb - 0.9) or coming out (at tb) holds the door open for a moment
+    const visit = BUY.some((tb) => (t > tb - 1.15 && t < tb - 0.65) || (t > tb - 0.25 && t < tb + 0.3));
+    g.rect(DOOR.x, DOOR.y, DOOR.w, DOOR.h, open || visit ? P.ink : P.g4);
+    if (visit && !open) {
+      // the door swung inwards: its edge on the hinge side, a glimpse of the counter
+      g.rect(DOOR.x, DOOR.y, 5, DOOR.h, P.g4);
+      g.rect(DOOR.x + 1, DOOR.y + 4, 3, 24, P.g5);
+      g.rect(DOOR.x + 8, DOOR.y + 30, DOOR.w - 10, 3, P.brown);
+      g.rect(DOOR.x + 20, DOOR.y + 22, 4, 8, P.red);
+    } else if (!open) {
       g.rect(DOOR.x + 4, DOOR.y + 4, DOOR.w - 8, 24, P.g5);
       if (t > 45.0) {
         // the counter inside, and the odd seed on it
@@ -236,21 +250,20 @@ export default (ctx) => {
       drawShop(g, t);
       // characters, sorted by lane
       const chars = [];
-      if (t < T_ZOOM1 + 0.5) {
+      if (t < T_EMPTY) {
         for (const p of crowd) {
-          let x = p.x0 + p.v * (t - T_WALK);
-          x = ((x - 100) % 1400 + 1400) % 1400 + 100;
+          const x = marchX(p, t);
           if (x < cx - 40 || x > cx + g.W + 40) continue;
           const y = p.lane ? GROUND + 5 : GROUND - 5;
           chars.push([y, () => drawCitizen(g, x, y, folkPoses.walk(m.beatF(t), { flip: true, item: p.brief ? { s: briefcase() } : null }))]);
         }
-        if (t > T_BUMP - 4 && t < T_BUMP + 6) {
+        if (t > T_BUMP - 9 && t < T_BUMP + 6) {
           const x = bumper.x(t), by = GROUND + 1 + Math.round(5 * prog(t, T_BUMP, T_BUMP + 0.4, E.outQ));
           chars.push([by + 0.5, () => drawCitizen(g, x, by, folkPoses.walk(m.beatF(t), { flip: true }))]);
         }
       }
       // buyers (shop phase)
-      if (t > 35.5) for (let i = 0; i < 3; i++) buyer(g, t, i, chars);
+      if (t > T_EMPTY) for (let i = 0; i < 3; i++) buyer(g, t, i, chars, cx + g.W + 20);
       // the gardener
       chars.push([GROUND + 1, () => gardener(g, t)]);
       chars.sort((a, b) => a[0] - b[0]).forEach((c2) => c2[1]());
@@ -365,14 +378,17 @@ export default (ctx) => {
     }
   }
 
-  function buyer(g, t, i, chars) {
+  function buyer(g, t, i, chars, xMax) {
     // walk in from the right to the door, vanish inside, come out with a rose and the smile
     const tb = BUY[i];
     const tin = tb - 0.9, tout = tb;
     const doorX = DOOR.x + 15;
     let x, p, y = GROUND + 4;
-    if (t < tin) { x = doorX + (tin - t) * 40; p = folkPoses.walk(m.beatF(t), { flip: true }); }
-    else if (t < tout) return;
+    if (t < tin) {
+      x = doorX + (tin - t) * 40;
+      if (x > xMax) return;
+      p = folkPoses.walk(m.beatF(t), { flip: true });
+    } else if (t < tout) return;
     else {
       // out of the door, walk to a spot by the window and stand; leave together before the light
       const spot = BUYPOS[i];

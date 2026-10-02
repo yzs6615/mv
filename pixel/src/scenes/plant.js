@@ -94,11 +94,23 @@ export default (ctx) => {
     for (let i = 0; i < 4; i++) g.hline(FIELD.fence, 1300, 84 + i * 10, P.blue);
     g.rect(FIELD.fence, 120, 900, 3, P.cyan);
     // racers streaming right in the back lanes
+    g.ctx.save();
+    g.ctx.beginPath();
+    g.ctx.rect(FIELD.fence + 2 + g.ox, -1000, 4000, 3000);
+    g.ctx.clip();
     for (let i = 0; i < 10; i++) {
       const x = ((i * 71 + (t - T0) * (95 + hash2(i, 2) * 30)) % 700) + FIELD.fence - 60;
-      if (x < FIELD.fence + 4) continue;
+      if (x < FIELD.fence - 10) continue;
       drawCitizen(g, x, 92 + (i % 3) * 9, folkPoses.run(t * 2.6 + i * 0.3, { expr: 'tired' }), CPAL, RACER);
     }
+    g.ctx.restore();
+    // the gate pillar at the end of the track: the runners come out from behind it
+    g.rect(FIELD.fence + 1, 56, 12, 66, P.ink);
+    g.rect(FIELD.fence + 2, 57, 10, 64, P.g3);
+    g.rect(FIELD.fence + 2, 57, 2, 64, P.g2);
+    g.rect(FIELD.fence + 2, 57, 10, 3, P.g2);
+    g.rect(FIELD.fence + 4, 66, 6, 9, P.g4);
+    text(g, '1', FIELD.fence + 7, 67, { font: 'zh8', align: 'center', color: P.g1 });
     // fence and sign
     for (let y = 82; y < 122; y += 6) g.hline(FIELD.fence - 2, FIELD.fence + 2, y, P.g4);
     for (let i = 0; i < 3; i++) g.rect(FIELD.fence - 1 + i * 0, 76 + i * 0, 3, 46, P.g4);

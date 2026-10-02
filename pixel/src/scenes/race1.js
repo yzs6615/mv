@@ -150,7 +150,8 @@ export default (ctx) => {
     // runners, far to near
     const list = runners.map((r, i) => {
       const burnt = t > r.burn;
-      const z = r.z0 + a * (burnt ? r.v * 0.55 : r.v) + Math.sin(a * 3 + i) * 6;
+      const aB = Math.min(a, r.burn - GO);
+      const z = r.z0 + r.v * aB + r.v * 0.55 * (a - aB) + Math.sin(a * 3 + i) * 6;
       return { r, i, z, burnt, x: r.lane + Math.sin(a * 2 + i * 1.7) * 8 };
     }).sort((p, q) => q.z - p.z);
     // ranks by z (furthest ahead = 1st)
@@ -185,22 +186,24 @@ export default (ctx) => {
   function side(g, t) {
     const W = g.W, H = g.H;
     const run = t < T_STOP;
-    const slow = run ? 0.35 : 1;
     const a = t - T_SIDE;
+    // distance covered at speed factor k0 until T_STOP and k1 after it
+    const dist = (k0, k1) => (run ? a * k0 : (T_STOP - T_SIDE) * k0 + (t - T_STOP) * k1);
+    const stride = run ? t * 1.2 : T_STOP * 1.2 + (t - T_STOP) * 3.2;
     g.vgrad(0, 0, W, [[0, P.g5], [40, P.blueD], [62, P.blue]], 2);
     for (let i = 0; i < 8; i++) {
-      const x = ((i * 44 - a * 50 * slow) % 352 + 352) % 352 - 44;
+      const x = ((i * 44 - 50 * dist(0.35, 0)) % 352 + 352) % 352 - 44;
       g.rect(x, 12, 36, 20, P.ink); g.frame(x, 12, 36, 20, P.blue);
       text(g, ['1st', '2nd', '3rd', 'WIN', 'TOP', 'No.1'][i % 6], x + 18, 17, { font: 'zh8', align: 'center', color: P.cyan });
     }
     g.rect(0, 62, W, 28, P.blueD);
-    for (let x = -((a * 120 * slow) % 20); x < W; x += 20) g.vline(x, 62, 89, P.blue);
+    for (let x = -((120 * dist(0.35, 0)) % 20); x < W; x += 20) g.vline(x, 62, 89, P.blue);
     g.hline(0, W, 62, P.cyan);
     const crowd = (front) => {
       for (let i = 0; i < 4; i++) {
         const sp = (front ? 70 : 50) + hash2(i, front ? 3 : 4) * 30;
-        const x = ((i * 47 + a * sp * (run ? 0.5 : 2.2)) % 220) - 30;
-        drawCitizen(g, x, front ? 92 : 74, folkPoses.run(t * (run ? 1.2 : 3.2) + i * 0.37, { expr: 'tired' }), RP, RACER);
+        const x = ((i * 47 + sp * dist(0.5, 2.2)) % 220) - 30;
+        drawCitizen(g, x, front ? 92 : 74, folkPoses.run(stride + i * 0.37, { expr: 'tired' }), RP, RACER);
       }
     };
     crowd(false);
