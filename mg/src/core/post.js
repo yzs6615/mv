@@ -48,7 +48,7 @@ export function initPost(w, h) {
     for (let i = 0, n = w * h; i < n; i++) {
       // grain: two hashes -> roughly triangular noise, a few percent, slightly coarser than a pixel at 1080p
       const gx = (i % w) >> (sc < 1.5 ? 1 : 0), gy = ((i / w) | 0) >> (sc < 1.5 ? 1 : 0);
-      const gr = 1 - 0.045 * (hash3(gx, gy, 101 + k) + hash3(gx, gy, 211 + k)) * 0.5 - 0.012 * hash3(i, k, 7);
+      const gr = 1 - 0.03 * (hash3(gx, gy, 101 + k) + hash3(gx, gy, 211 + k)) * 0.5 - 0.006 * hash3(i, k, 7);
       const v = base[i] * gr;
       d[i * 4] = clamp((fd[i * 4] / 255) * v * 255, 0, 255);
       d[i * 4 + 1] = clamp((fd[i * 4 + 1] / 255) * v * 254, 0, 255);
@@ -60,12 +60,12 @@ export function initPost(w, h) {
   }
 }
 
-// frame: integer frame index at 60 fps (grain is held for two frames, like animation on twos)
+// frame: integer frame index at 60 fps (grain is held for four frames, a gentle 15 Hz shimmer)
 export function drawPost(ctx, frame) {
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = 'multiply';
-  ctx.drawImage(layers[Math.floor(frame / 2) % VARIANTS], 0, 0);
+  ctx.drawImage(layers[Math.floor(frame / 4) % VARIANTS], 0, 0);
   ctx.restore();
 }
