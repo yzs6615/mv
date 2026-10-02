@@ -1,6 +1,10 @@
-// 51.36 - 56.2  "世界上的人 美丽都是洋洋洒洒": the camera cranes up from the flower shop into a voxel
+// 51.36 - 56.6  "世界上的人 美丽都是洋洋洒洒": the camera cranes up from the flower shop into a voxel
 // city. Every block is the same gray box, every roof carries the same smiling rose billboard, and
-// the tiny voxel people march in lockstep down every street. On "洋洋洒洒" the roses pulse together.
+// the tiny voxel people march in lockstep down every street. They stay gray. In front of the shop
+// the gardener's odd seed throws a glitching column of light into the sky; its light runs out
+// through the streets, and from every gray head it passes a small flower pops out, each one a
+// different shape and colour, and floats up over the roofs. On "洋洋洒洒" ripples run through
+// the sky of flowers; diving back down to the street they melt away and the city is gray again.
 // Rendered with three.js at 480x270 and snapped to the palette with ordered dithering.
 import { P } from '../core/pal.js';
 import { THREE, renderInto, pixelTexture } from '../core/three.js';
@@ -40,14 +44,59 @@ void main() {
   gl_FragColor = vec4(mix(col, fogColor, f), 1.0);
 }`;
 
+// the hidden flowers: 16x16 pixel heads in four shapes, ink outlined, one texture per shape and colour
+const BEAM_COLS = [P.red, P.orange, P.yellow, P.green, P.cyan, P.blue, P.magenta, P.pink];
+const FLOWER_COLS = [P.red, P.orange, P.gold, P.yellow, P.green, P.cyan, P.blue, P.magenta, P.pink, P.hot, P.peach, P.white];
+function flowerCanvas(shape, col) {
+  const S = 16, grid = new Array(S * S).fill(null);
+  const put = (i, j, c) => { if (i >= 1 && j >= 1 && i < S - 1 && j < S - 1) grid[j * S + i] = c; };
+  const disc = (cx, cy, r, c) => { for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) if ((i + 0.5 - cx) ** 2 + (j + 0.5 - cy) ** 2 <= r * r) put(i, j, c); };
+  const centre = col === P.yellow || col === P.gold || col === P.white ? P.orange : P.yellow;
+  const c = 8;
+  if (shape === 0) { // five round petals
+    for (let k = 0; k < 5; k++) { const a = -Math.PI / 2 + (k * 2 * Math.PI) / 5; disc(c + Math.cos(a) * 3.4, c + Math.sin(a) * 3.4, 2.7, col); }
+    disc(c, c, 1.9, centre);
+  } else if (shape === 1) { // daisy: eight thin petals round a big centre
+    for (let k = 0; k < 8; k++) { const a = (k * Math.PI) / 4; for (let r = 2; r <= 6.2; r += 0.5) put(Math.floor(c + Math.cos(a) * r), Math.floor(c + Math.sin(a) * r), col); }
+    disc(c, c, 2.6, centre);
+  } else if (shape === 2) { // tulip cup
+    disc(c, c + 1, 4.6, col);
+    for (let j = 0; j < 5; j++) for (let i = 2; i < 14; i++) grid[j * S + i] = null;
+    for (const i of [4, 8, 12]) { put(i - 1, 5, col); put(i, 5, col); put(i, 4, col); put(i - 1, 4, col); put(i, 3, col); }
+    put(c, 13, P.green); put(c, 14, P.green);
+  } else { // four big petals in a cross
+    for (const [dx, dy] of [[0, -1], [1, 0], [0, 1], [-1, 0]]) disc(c + dx * 3.3, c + dy * 3.3, 2.9, col);
+    disc(c, c, 1.6, centre);
+  }
+  const cv = env.createCanvas(S, S), x = ctx2d(cv);
+  for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) {
+    let col2 = grid[j * S + i];
+    if (!col2) {
+      let edge = false;
+      for (let dy = -1; dy <= 1 && !edge; dy++) for (let dx = -1; dx <= 1; dx++) { const a = i + dx, b = j + dy; if (a >= 0 && b >= 0 && a < S && b < S && grid[b * S + a]) { edge = true; break; } }
+      if (!edge) continue;
+      col2 = P.ink;
+    }
+    x.fillStyle = col2; x.fillRect(i, j, 1, 1);
+  }
+  return cv;
+}
+
 export default (ctx) => {
   const { m } = ctx;
-  const T0 = 51.36, T1 = 56.6, T_WAVE = 53.75;
-  let scene, cam, people, roses, N_PEOPLE, lines;
+  const T0 = 51.36, T1 = 56.6;
+  // the seed's light: a column from the street in front of the shop, then a ring through the city
+  const T_BEAM = 52.0, T_REL = 52.1, SPEED = 52, SRC = [4, 12];
+  const SYL = [53.75, 54.17, 54.64, 54.97]; // 洋 洋 洒 洒
+  const T_FADE = 55.4;
+  let scene, cam, people, roses, N_PEOPLE, lines, beam, blooms, bloomOf;
   const SHOP = new THREE.Vector3(0, 0, 0);
   ctx.cue(T0, 'whoosh', { v: 0.5 });
+  ctx.cue(T_BEAM, 'shine', { v: 0.55 });
+  for (let i = 0; i < 7; i++) ctx.cue(T_REL + 0.12 + i * 0.34, 'twinkle', { v: 0.22 + 0.03 * (i % 3), p: 1 + i * 0.07 });
+  SYL.forEach((t, i) => ctx.cue(t, 'pop', { v: 0.32, p: 1 + i * 0.18 }));
+  ctx.cue(SYL[3] + 0.1, 'sparkle', { v: 0.3 });
   ctx.cue(T1 - 0.5, 'whoosh', { v: 0.6, p: 0.7 });
-  for (let i = 0; i < 3; i++) ctx.cue(m.beatTime(Math.ceil(m.beatF(T_WAVE)) + i), 'blip', { v: 0.25, p: 1 + i * 0.25 });
 
   function build() {
     scene = new THREE.Scene();
@@ -138,6 +187,90 @@ export default (ctx) => {
     people.userData.heads = heads;
     scene.add(heads);
     scene.add(new THREE.HemisphereLight(hex(P.white), hex(P.g4), 2.2));
+
+    // the seed's column of light: a white core in a glitching rainbow sleeve (two planes turned to
+    // the camera, the core a hair in front)
+    beam = new THREE.Group();
+    const sleeve = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 90).translate(0, 45, 0), new THREE.MeshBasicMaterial({ color: hex(P.yellow), fog: false, side: THREE.DoubleSide }));
+    const core = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 90).translate(0, 45, 0.08), new THREE.MeshBasicMaterial({ color: hex(P.white), fog: false, side: THREE.DoubleSide }));
+    beam.add(sleeve, core);
+    beam.userData.sleeve = sleeve;
+    beam.position.set(SRC[0], 0, SRC[1]);
+    beam.visible = false;
+    scene.add(beam);
+
+    // one hidden flower per person, released when the light reaches them; grouped by shape+colour
+    const quad = new THREE.PlaneGeometry(1, 1);
+    const groups = new Map();
+    bloomOf = [];
+    const pos = [0, 0];
+    for (let k = 0; k < N_PEOPLE; k++) {
+      personAt(k, T_REL, pos);
+      const rel = T_REL + Math.hypot(pos[0] - SRC[0], pos[1] - SRC[1]) / SPEED;
+      personAt(k, rel, pos);
+      const b = {
+        rel, x: pos[0], z: pos[1], d: Math.hypot(pos[0] - SRC[0], pos[1] - SRC[1]),
+        hgt: 9 + hash2(k, 31) * 13, ph: hash2(k, 37) * 6.283, size: 1.5 + hash2(k, 41) * 0.7, fade: hash2(k, 43),
+      };
+      bloomOf.push(b);
+      const key = Math.floor(hash2(k, 7) * 4) * 100 + Math.floor(hash2(k, 13) * FLOWER_COLS.length);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(k);
+    }
+    blooms = [];
+    for (const [key, ks] of groups) {
+      const mat = new THREE.MeshBasicMaterial({ map: pixelTexture(flowerCanvas(Math.floor(key / 100), FLOWER_COLS[key % 100])), alphaTest: 0.5, fog: false, side: THREE.DoubleSide });
+      const mesh = new THREE.InstancedMesh(quad, mat, ks.length);
+      mesh.frustumCulled = false;
+      scene.add(mesh);
+      blooms.push({ mesh, ks });
+    }
+  }
+
+  // where person k is at time t (the same lockstep march as update())
+  function personAt(k, t, out) {
+    const PER = 26, L = lines[Math.floor(k / PER)], i = k % PER;
+    const along = ((i / PER) * 228 + L.dir * L.v * (t - T0) * 6) % 228;
+    const a = ((along + 228) % 228) - 114;
+    if (L.axis === 'x') { out[0] = a; out[1] = L.c; } else { out[0] = L.c; out[1] = a; }
+    return out;
+  }
+
+  function updateBlooms(t) {
+    const M = new THREE.Matrix4(), p = new THREE.Vector3(), sv = new THREE.Vector3(), q = cam.quaternion;
+    for (const { mesh, ks } of blooms) {
+      ks.forEach((k, j) => {
+        const b = bloomOf[k], age = t - b.rel;
+        let s = 0;
+        if (age > 0) {
+          const pop = age < 0.3 ? E.outBack(age / 0.3, 2.4) : 1;
+          // ripples through the sky of flowers on 洋 洋 洒 洒
+          let rip = 0;
+          for (const ts of SYL) if (t > ts) rip = Math.max(rip, Math.exp(-(((t - ts) * 115 - b.d) ** 2) / 180));
+          const fade = 1 - prog(t, T_FADE + b.fade * 0.45, T_FADE + 0.25 + b.fade * 0.45, E.inQ);
+          s = b.size * pop * (1 + 0.75 * rip) * fade;
+          const w = Math.min(1, age);
+          p.set(
+            b.x + 0.9 * Math.sin(1.1 * t + b.ph) * w,
+            2.6 + b.hgt * (1 - Math.exp(-age * 1.15)) + 0.35 * Math.sin(2.3 * t + b.ph) + 1.6 * rip,
+            b.z + 0.9 * Math.cos(0.9 * t + b.ph * 1.3) * w,
+          );
+        }
+        sv.set(Math.max(s, 1e-4), Math.max(s, 1e-4), 1);
+        M.compose(p, q, sv);
+        mesh.setMatrixAt(j, M);
+      });
+      mesh.instanceMatrix.needsUpdate = true;
+    }
+    // the column of light: snaps on, flickers through the rainbow, thins away
+    const on = t > T_BEAM && t < 54.9;
+    beam.visible = on;
+    if (on) {
+      const w = prog(t, T_BEAM, T_BEAM + 0.15, E.outBack) * (1 - prog(t, 54.2, 54.9, E.inQ)) * (1 + 0.18 * Math.sin(t * 40));
+      beam.scale.set(Math.max(w, 1e-3), 1, 1);
+      beam.rotation.y = Math.atan2(cam.position.x - SRC[0], cam.position.z - SRC[1]);
+      beam.userData.sleeve.material.color.set(BEAM_COLS[Math.floor(t * 12) % BEAM_COLS.length]);
+    }
   }
 
   function update(t) {
@@ -158,13 +291,10 @@ export default (ctx) => {
     }
     people.instanceMatrix.needsUpdate = true;
     heads.instanceMatrix.needsUpdate = true;
-    // roses: pulse together on the beat, a wave of size on "洋洋洒洒"
+    // roses: every billboard pulses together on the beat, the one standard smile
     const rl = roses.userData.lots;
-    const wave = t > T_WAVE ? (t - T_WAVE) * 60 : -1;
     rl.forEach(([bx, bz, h], j) => {
-      const d = Math.hypot(bx, bz);
-      let sc = 1 + 0.25 * m.pulse(t, 8);
-      if (wave > 0 && Math.abs(d - wave) < 8) sc = 1.6;
+      const sc = 1 + 0.25 * m.pulse(t, 8);
       p.set(bx, h + 3.2, bz);
       const yaw = Math.atan2(cam.position.x - bx, cam.position.z - bz);
       q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
@@ -203,8 +333,9 @@ export default (ctx) => {
     draw(g, t) {
       cameraAt(t);
       update(t);
+      updateBlooms(t);
       renderInto(g, scene, cam);
     },
-    post(g) { quantizePass(g, 1, [P.ink, P.g5, P.g4, P.g3, P.g2, P.g1, P.white, P.red, P.redD, P.hot, P.yellow, P.gold, P.peach, P.tan, P.pink]); },
+    post(g) { quantizePass(g, 1, [P.ink, P.g5, P.g4, P.g3, P.g2, P.g1, P.white, P.red, P.redD, P.hot, P.yellow, P.gold, P.peach, P.tan, P.pink, P.orange, P.green, P.cyan, P.blue, P.magenta]); },
   };
 };

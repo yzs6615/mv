@@ -473,3 +473,26 @@ export const dream = (kind) => {
   for (const k in d.pal) pal[k] = ex(d.pal[k]);
   return sprite(d.art, pal, { ax: 4.5, ay: 4.5 });
 };
+
+// the same three flowers grown up on a stem, for the judging stage; exempt = in colour even in the
+// gray world (otherwise the gray pass flattens them like everything else)
+export const dreamPlant = (kind, exempt = true) => makeSprite(13, 16, (g) => {
+  const d = DREAMS[kind];
+  const X = exempt ? ex : (c) => c;
+  const pal = {};
+  for (const k in d.pal) pal[k] = X(d.pal[k]);
+  const head = sprite(d.art, pal, { ax: 0, ay: 0 });
+  const st = X(P.greenM), lf = X(P.green);
+  if (kind === 'bluebell') {
+    // nodding: the stem climbs, arches over and the bell hangs from it
+    g.vline(3, 1, 15, st); g.hline(3, 7, 1, st); g.px(7, 2, st);
+    g.px(4, 11, lf); g.px(5, 10, lf); g.px(2, 13, lf); g.px(1, 12, lf);
+    g.spr(head, 3, 3);
+  } else if (kind === 'tulip') {
+    g.vline(6, 12, 15, st);
+    g.spr(head, 2, 3);
+  } else {
+    g.vline(6, 10, 15, st); g.px(7, 12, lf); g.px(8, 11, lf); g.px(9, 11, lf); g.px(5, 14, lf); g.px(4, 13, lf);
+    g.spr(head, 2, 1);
+  }
+}, { ax: kind === 'bluebell' ? 3.5 : 6.5, ay: 16 }, 'dplant' + kind + (exempt ? 'x' : ''));

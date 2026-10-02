@@ -613,6 +613,23 @@ def fx_jump(p=1, **k):
     return square(sweep(250 * p, 900 * p, d, 0.7), d, 0.25) * env(d, decay=0.08) * 0.5
 
 
+def fx_shutter(p=1, **k):
+    s = blank(0.4)
+    mixat(s, sine(sweep(2600, 3600, 0.22), 0.22) * env(0.22, a=0.02, decay=0.08) * 0.1, 0)
+    mixat(s, hp_fast(noise(0.05, 30000), 2500) * env(0.05, decay=0.012) * 0.9, 0.0)
+    mixat(s, hp_fast(noise(0.04, 30000), 3500) * env(0.04, decay=0.01) * 0.6, 0.06)
+    mixat(s, square(140, 0.05, 0.3) * env(0.05, decay=0.015) * 0.25, 0.0)
+    return s
+
+
+def fx_print(p=1, **k):
+    s = blank(0.6)
+    for i in range(7):
+        mixat(s, square(170 + 50 * (i % 2), 0.05, 0.3) * env(0.05, decay=0.02) * 0.35, i * 0.06)
+        mixat(s, hp_fast(noise(0.03, 12000), 1500) * env(0.03, decay=0.01) * 0.25, i * 0.06 + 0.02)
+    return s
+
+
 def fx_card(p=1, **k):
     return np.concatenate([fx_turn() * 0.7, fx_tick(p) * 1.2])
 
