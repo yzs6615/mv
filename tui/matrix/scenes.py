@@ -158,9 +158,15 @@ def blink(face):
     return face[0] + '-' + face[2] + '-' + face[4] if len(face) == 5 else face
 
 
+SKIRT = {'fly': '\\_/', 'collapse': '___', 'sneak': '/_\\', 'kneel': '/_,'}      # her legs row, by pose
+
+
 def figure(S, x, y, face='smile', pose='idle', col=JULIET, k=1.0, aura=1.0, decay=0.0, glitch=0.0, shiver=0.0,
-           sway=0.0, bounce=0.0, size=1.0, tail=None, halo=0.0, orbit=False, dance=False):
+           sway=0.0, bounce=0.0, size=1.0, tail=None, halo=0.0, orbit=False, dance=False, gender='f'):
     """a character built from symbols: a kaomoji face, `/|\\` limbs, a particle aura.
+
+    gender 'f': long hair strands flanking the face, a flower in the hair and a skirt; 'm': short spiky hair and
+    trousers. The limbs and faces are shared.
 
     emotion is motion: shiver = 16th-note jitter (fear), sway = slow drift (sadness), bounce = a hop on the beat (joy),
     dance = arms up on the off-beats, blink on every downbeat. decay greys the aura and corrupts the limbs; glitch
@@ -184,16 +190,26 @@ def figure(S, x, y, face='smile', pose='idle', col=JULIET, k=1.0, aura=1.0, deca
     if dance and int(math.floor(S.beat_n)) % 2 == 1 and pose == 'idle':
         pose = 'up'
     torso, legs = POSES.get(pose, POSES['idle'])
+    def corrupt(s_, seed):
+        return ''.join(c if hash01(seed * 13 + i * 7 + int(t * 3)) > decay * 0.8 else '▒░?'[int(hash01(seed + i) * 3)]
+                       for i, c in enumerate(s_))
     if decay > 0:
-        def corrupt(s_, seed):
-            return ''.join(c if hash01(seed * 13 + i * 7 + int(t * 3)) > decay * 0.8 else '▒░?'[int(hash01(seed + i) * 3)]
-                           for i, c in enumerate(s_))
         torso, legs = corrupt(torso, 2), corrupt(legs, 3)
         if decay > 0.85:
             f = FACES['dead']
         elif decay > 0.6:
             f = corrupt(f, 1)
     c = scale(col, 0.4 + 0.6 * k)
+    if gender == 'f':
+        hair_top, strands, legs = '.·✿·.', (')', '('), SKIRT.get(pose, '/_\\')
+    else:
+        hair_top, strands = ' ^^^ ', (' ', ' ')
+    if decay > 0:
+        hair_top, strands = corrupt(hair_top, 4), (corrupt(strands[0], 5), corrupt(strands[1], 6))
+        legs = corrupt(legs, 3) if gender == 'f' else legs
+    cv.text(x - 2, y - 2, hair_top, scale(c, 0.85))
+    cv.put(x - 3, y - 1, strands[0], scale(c, 0.85))
+    cv.put(x + 3, y - 1, strands[1], scale(c, 0.85))
     cv.text(x - 2, y - 1, f, c)
     cv.text(x - 1, y, torso, c)
     cv.text(x - 1, y + 1, legs, c)
@@ -228,20 +244,20 @@ def figure(S, x, y, face='smile', pose='idle', col=JULIET, k=1.0, aura=1.0, deca
             gy = y + (hash01(i * 3 + int(t * 7)) - 0.5) * 5
             cv.put(gx, gy, '▒?#%'[int(hash01(i + int(t * 11)) * 4)], scale(GREY, 0.8))
     if halo > 0:
-        br.circle(x * 2 + 1, (y - 2.6) * 4 + 2, 9, scale(GOLD, 0.9 * halo), step=0.8)
-        br.circle(x * 2 + 1, (y - 2.6) * 4 + 2, 7, scale(WHITE, 0.5 * halo), step=1.0)
+        br.circle(x * 2 + 1, (y - 3.4) * 4 + 2, 9, scale(GOLD, 0.9 * halo), step=0.8)
+        br.circle(x * 2 + 1, (y - 3.4) * 4 + 2, 7, scale(WHITE, 0.5 * halo), step=1.0)
 
 
 def juliet(S, x, y, k=1.0, decay=0.0, glitch=0.0, size=1.0, col=JULIET, core_on=True, face='smile', pose='idle',
            shiver=0.0, sway=0.0, bounce=0.0, dance=False):
     figure(S, x, y, face=face if core_on else 'sleep', pose=pose, col=col, k=k, aura=1.0, decay=decay, glitch=glitch,
-           shiver=shiver, sway=sway, bounce=bounce, size=size, dance=dance)
+           shiver=shiver, sway=sway, bounce=bounce, size=size, dance=dance, gender='f')
 
 
 def romeo(S, x, y, k=1.0, heading=(1.0, 0.0), size=1.0, halo=0.0, col=ROMEO, face='wink', pose='fly', shiver=0.0,
           sway=0.0, bounce=0.0, dance=False, decay=0.0):
     figure(S, x, y, face=face, pose=pose, col=col, k=k, aura=0.5, decay=decay, shiver=shiver, sway=sway, bounce=bounce,
-           size=size, tail=heading, halo=halo, orbit=True, dance=dance)
+           size=size, tail=heading, halo=halo, orbit=True, dance=dance, gender='m')
 
 
 def holo(S, x, y, who, lines, t0, col, cps=26.0, above=True, w=None, dur=7.0):
@@ -261,7 +277,7 @@ def holo(S, x, y, who, lines, t0, col, cps=26.0, above=True, w=None, dur=7.0):
     w = w or max(text_width(l) for l in lines) + 4
     h = len(shown) + 1
     x0 = int(min(max(1, x - w // 2), S.W - w - 1))
-    y0 = int(y - h - 3) if above else int(y + 3)      # clear of the face row (y-1) and the legs (y+1)
+    y0 = int(y - h - 4) if above else int(y + 3)      # clear of the hair (y-2), the face (y-1) and the legs (y+1)
     y0 = max(1, min(y0, S.H - h - 1))
     a = clamp((t - t0) / 0.25) * clamp((t0 + dur - t) / 0.4)
     cv.box(x0, y0, x0 + w, y0 + h, scale(col, 0.55 * a), style='round', title=who, title_col=scale(col, 0.9 * a))
@@ -459,8 +475,8 @@ def s_intro(S):
     a = smooth(m.bar(3.5), m.bar(4.5), t)
     if a > 0:
         juliet(S, jx, jy, k=a, face='cold')
-        cv.text(jx - 6, top - 7, 'Core_Juliet', scale(JULIET, 0.8 * a))
-        cv.text(jx - 7, top - 6, '核心逻辑进程', scale(JULIET, 0.55 * a))
+        cv.text(jx - 7, top - 8, 'Core_Juliet ♀', scale(JULIET, 0.8 * a))
+        cv.text(jx - 7, top - 7, '核心逻辑进程', scale(JULIET, 0.55 * a))
     # the boot line typed in the centre
     t1 = m.bar(1.5)
     s1 = typed('System initialized.  Read-only mode activated.', t, t1, 18)
@@ -505,11 +521,11 @@ def s_bus(S):
     rpose = 'fly' if t < m.bar(18) else 'reach_r'
     romeo(S, rx, ry, k=appear, heading=heading, face=rface, pose=rpose, bounce=1.0 if t >= m.bar(16) else 0.0)
     if appear > 0.5 and t < m.bar(16):
-        cv.text(rx - 5, ry + 3, 'Patch_Romeo · ping', scale(ROMEO, 0.7))
+        cv.text(rx - 5, ry + 3, 'Patch_Romeo ♂ · ping', scale(ROMEO, 0.7))
     jface = 'cold' if t < m.bar(14) else 'curious' if t < m.bar(16) else 'smile' if t < m.bar(23.4) else 'love'
     jpose = 'idle' if t < m.bar(21) else 'reach_l'
     juliet(S, jx, jy, k=1.0, face=jface, pose=jpose)
-    cv.text(jx - 6, top - 7, 'Core_Juliet', scale(JULIET, 0.6))
+    cv.text(jx - 7, top - 8, 'Core_Juliet ♀', scale(JULIET, 0.6))
     # the gateway
     gx = px - 24
     cv.vline(gx, lanes[0] - 1, lanes[-1] + 1, '┆', scale(BLUE_DIM, 1.3))
@@ -888,7 +904,7 @@ def s_bridge(S):
             py_ = by0 + bh - 5 - (i % 3) * 1
             cv.text(px_, py_, '[ Connection Timeout ]', scale(mix(GREY, RED, 0.4), 0.8))
     if c_:
-        holo(S, jx, jy - 5, 'Core_Juliet', ['> romeo: 已被回收？', '> 闭眼 · 等待格式化'], m.bar(90), mix(JULIET, GREY, 0.5), cps=14)
+        holo(S, jx + 26, jy - 1, 'Core_Juliet', ['> romeo: 已被回收？', '> 闭眼 · 等待格式化'], m.bar(90), mix(JULIET, GREY, 0.5), cps=14)
         # the lift into the modulation: a seam of gold light opens at the top centre
         lift = smooth(m.bar(93), m.bar(94), t)
         if lift > 0:
