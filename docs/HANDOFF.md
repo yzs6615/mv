@@ -14,7 +14,7 @@
 |---|---|---|
 | **母体版 MV（当前主交付）** | ✅ 已完成，已推送 | `tui/matrix/` |
 | 经典中文版 MV | ✅ 保留 | `tui/scenes.py` |
-| 母体版预览视频（含歌曲音轨，4:04，720p） | ✅ 已发给你；仓库忽略 `.mp4`，不提交 | 会话附件 `LoveStory_matrix_720p.mp4` |
+| **母体版成品视频**（含歌曲音轨，4:04，60 fps，seed 1989） | ✅ 已提交到仓库 | `release/LoveStory_matrix_1600x900_60fps.mp4`（主版本）、`release/LoveStory_matrix_720p.mp4`（手机用） |
 | 经典版预览视频 | ✅ 上一轮已发 | 会话附件 `LoveStory_terminal_zh_720p.mp4` |
 | 音乐分析（节拍、段落、转调） | ✅ 沿用 | `analysis/analyze.py` → `tui/data/music_map.json` |
 | 中文大字点阵（101 字） | ✅ | `tui/make_glyphs.py` → `tui/data/glyphs.json` |
@@ -64,6 +64,8 @@ python3 tui/lovestory.py --export out.mp4 --audio ...              # 离线导�
   整屏抖动、计数），第 70 小节起深渊从 Romeo 脚下升起。
 - **合流（102–114）**：`COMMITS` 表定义 12 个提交（小节、分支、标签），`s_merge()` 画立起来的 git 分支图，两人每小节沿分支
   上爬一格，第 112 小节在 `merge: Eternity Protocol` 汇合，main 线通向 `∞`。
+- **合流的新颜色**：`Ctx.union`（0→1，第 112–113.6 小节）把金和蓝一起混成 `UNION_NEW`（暮光紫），`juliet()`/`romeo()`、
+  白色世界的角色底卡、光环、主分支线、光点、状态面板、状态栏和片尾 `return` 行都按它混色；尾奏固定为 1。
 - **彩蛋层 `tui/matrix/eggs.py`**：`draw_eggs(S, 'bg')` 在场景之前画弹窗/注释/印章/迷你面板，`draw_eggs(S, 'fg')` 在场景之后画
   路过的 NPC。调度：14 个槽位，每个槽位有自己的周期（2–4 小节）和相位，按 `(seed, slot, epoch)` 的哈希选种类和条目，
   活跃槽位数 5–12 随段落能量变。素材池：`POPUPS`(45) / `WALKERS`(24) / `COMMENTS`(31) / `STAMPS`(14) / `MINIS`(8)。
@@ -141,7 +143,8 @@ python3 tui/lovestory.py --export out.mp4 --audio ...              # 离线导�
 
 - **不要在任何地方出现歌词。** 所有旁白、日志、标题都是原创文字；两版的文案分别只在 `tui/matrix/story.py` 和
   `tui/story.py` 的 `NARRATION` 表里，改文案只改那里。上一轮就因为讨论歌词触发过内容过滤导致会话中断。
-- 歌曲和含歌曲的视频都不能提交，`.gitignore` 已经排除。公开发布或参赛需要另外取得歌曲授权。
+- 歌曲文件不提交。成品视频含歌曲音轨，按你的要求放在 `release/`（`.gitignore` 里 `!release/*.mp4` 放行）；
+  公开发布或参赛需要另外取得歌曲的使用授权。GitHub 单文件上限 100 MB，主版本按 crf 控制在以内。
 - `.claude/agents/mv-engineer.md` 是 3D 版的子 agent 配置，和终端版无关。
 
 ## 9. 建议的下一步
