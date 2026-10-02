@@ -41,6 +41,10 @@ class Ctx:
         self.grey = 0.0           # desaturation of the bridge
         self.red = 0.0            # alarm tint
         self.shake = 0.0          # camera shake (fear, alarms, the reboot)
+        self.big = self.H >= 36   # 2x detailed figures when there is room
+        self.figs = []            # figure boxes, kept visible on the white world
+        self.status = None        # (juliet fields, romeo fields, corner) for the process panel
+        self.ticker = None        # strings for the row-1 hex/log ticker
 
     def bar(self, n):
         return self.m.bar(n)
@@ -161,20 +165,29 @@ def blink(face):
 SKIRT = {'fly': '\\_/', 'collapse': '___', 'sneak': '/_\\', 'kneel': '/_,'}      # her legs row, by pose
 
 
+ARMS = {'idle': '/--|--\\', 'up': '\\  |  /', 'reach_r': '/--|---', 'reach_l': '---|--\\', 'hug_r': '/--|---',
+        'hug_l': '---|--\\', 'fly': '\\__|__/', 'sneak': '---|--\\', 'kneel': '/--|--\\', 'sad': '\\--|--/',
+        'collapse': '___|___', 'throw': '/--|--/'}
+SKIRT2 = {'fly': ('\\___/', ' \\___/ '), 'collapse': ('_____', '_______'), 'kneel': ('/___\\', '/____,_')}
+LEGS2 = {'fly': ('\\   /', '  \\_/  '), 'collapse': ('_____', '_______'), 'kneel': ('|  ,/', '_|__/  '),
+         'sneak': ('|  /', ' |_/   ')}
+
+
 def figure(S, x, y, face='smile', pose='idle', col=JULIET, k=1.0, aura=1.0, decay=0.0, glitch=0.0, shiver=0.0,
            sway=0.0, bounce=0.0, size=1.0, tail=None, halo=0.0, orbit=False, dance=False, gender='f'):
-    """a character built from symbols: a kaomoji face, `/|\\` limbs, a particle aura.
+    """a character built from symbols: a kaomoji face, limbs, a particle aura.
 
-    gender 'f': long hair strands flanking the face, a flower in the hair and a skirt; 'm': short spiky hair and
-    trousers. The limbs and faces are shared.
+    gender 'f': long hair strands flanking the face, a flower in the hair, a waist and a skirt; 'm': short spiky
+    hair, a collar, a belt and trousers. On a tall terminal (S.big) the figure is the detailed 7-row version.
 
     emotion is motion: shiver = 16th-note jitter (fear), sway = slow drift (sadness), bounce = a hop on the beat (joy),
-    dance = arms up on the off-beats, blink on every downbeat. decay greys the aura and corrupts the limbs; glitch
+    dance = arms up on the off-beats, blink on every downbeat. decay greys the aura and corrupts the body; glitch
     sprays corrupted cells. tail = heading vector for Romeo's comet tail; halo = the gold ring of root.
     """
     if k <= 0.02:
         return
     t, cv, br, m = S.t, S.cv, S.br, S.m
+    big = S.big and size >= 1.0
     dx = 0.0
     if shiver:
         dx += (hash01(int(t * 16) * 7 + 1) - 0.5) * 2.0 * shiver
@@ -189,37 +202,49 @@ def figure(S, x, y, face='smile', pose='idle', col=JULIET, k=1.0, aura=1.0, deca
         f = blink(f)
     if dance and int(math.floor(S.beat_n)) % 2 == 1 and pose == 'idle':
         pose = 'up'
-    torso, legs = POSES.get(pose, POSES['idle'])
+
     def corrupt(s_, seed):
+        if decay <= 0:
+            return s_
         return ''.join(c if hash01(seed * 13 + i * 7 + int(t * 3)) > decay * 0.8 else '▒░?'[int(hash01(seed + i) * 3)]
                        for i, c in enumerate(s_))
-    if decay > 0:
-        torso, legs = corrupt(torso, 2), corrupt(legs, 3)
-        if decay > 0.85:
-            f = FACES['dead']
-        elif decay > 0.6:
-            f = corrupt(f, 1)
+    if decay > 0.85:
+        f = FACES['dead']
+    elif decay > 0.6:
+        f = corrupt(f, 1)
     c = scale(col, 0.4 + 0.6 * k)
-    if gender == 'f':
-        hair_top, strands, legs = '.·✿·.', (')', '('), SKIRT.get(pose, '/_\\')
+    dim = scale(c, 0.85)
+    if big:
+        arms = corrupt(ARMS.get(pose, ARMS['idle']), 2)
+        if gender == 'f':
+            l1, l2 = SKIRT2.get(pose, ('/___\\', '/_____\\'))
+            rows = [(-3, -3, '.-·✿·-.', dim), (-4, -2, ') ' + f + ' (', c), (-3, -1, ')  |  (', dim), (-3, 0, arms, c),
+                    (-3, 1, ' \\_|_/ ', c), (-2, 2, corrupt(l1, 3), c), (-3, 3, corrupt(l2, 7), dim)]
+        else:
+            l1, l2 = LEGS2.get(pose, ('|   |', '_|   |_'))
+            rows = [(-2, -3, '^^^^^', dim), (-2, -2, f, c), (-2, -1, '.-|-.', dim), (-3, 0, arms, c),
+                    (-2, 1, '[_|_]', c), (-2, 2, corrupt(l1, 3), c), (-3, 3, corrupt(l2, 7), dim)]
+        box = (x - 5, y - 4, x + 5, y + 3)
     else:
-        hair_top, strands = ' ^^^ ', (' ', ' ')
-    if decay > 0:
-        hair_top, strands = corrupt(hair_top, 4), (corrupt(strands[0], 5), corrupt(strands[1], 6))
-        legs = corrupt(legs, 3) if gender == 'f' else legs
-    cv.text(x - 2, y - 2, hair_top, scale(c, 0.85))
-    cv.put(x - 3, y - 1, strands[0], scale(c, 0.85))
-    cv.put(x + 3, y - 1, strands[1], scale(c, 0.85))
-    cv.text(x - 2, y - 1, f, c)
-    cv.text(x - 1, y, torso, c)
-    cv.text(x - 1, y + 1, legs, c)
+        torso, legs = POSES.get(pose, POSES['idle'])
+        torso, legs = corrupt(torso, 2), corrupt(legs, 3)
+        if gender == 'f':
+            legs = corrupt(SKIRT.get(pose, '/_\\'), 3)
+            rows = [(-2, -2, corrupt('.·✿·.', 4), dim), (-3, -1, ')' + f + '(', c), (-1, 0, torso, c), (-1, 1, legs, c)]
+        else:
+            rows = [(-2, -2, ' ^^^ ', dim), (-2, -1, f, c), (-1, 0, torso, c), (-1, 1, legs, c)]
+        box = (x - 4, y - 3, x + 4, y + 1)
+    for ddx, ddy, txt, cc in rows:
+        cv.text(x + ddx, y + ddy, txt, cc)
+    S.figs.append((box, gender))
+    sz = (1.9 if big else 1.0) * size
     if aura > 0:
         p = m.pulse(t, 5)
         for i in range(int(44 * aura)):
             a = hash01(i * 7 + 1) * math.tau + t * 0.5 * (1 if i % 2 else -1)
             r = 0.7 + hash01(i * 3 + 2) * 0.6 + 0.15 * p
-            px = x + math.cos(a) * r * 3.4 * size
-            py = y + math.sin(a) * r * 2.3 * size
+            px = x + math.cos(a) * r * 3.4 * sz
+            py = y + math.sin(a) * r * 2.3 * sz
             if hash01(i * 5) < decay:
                 py += decay * 5 * hash01(i * 11)
                 cc = scale(mix(col, GREY, 0.8), 0.4 * k)
@@ -230,22 +255,23 @@ def figure(S, x, y, face='smile', pose='idle', col=JULIET, k=1.0, aura=1.0, deca
         hx, hy = tail
         n = math.hypot(hx, hy) or 1.0
         hx, hy = hx / n, hy / n
-        for i in range(2, 16):
-            px = x - hx * i * 0.9 + 0.3 * math.sin(t * 6 + i)
-            py = y - hy * i * 0.45 + 0.25 * math.cos(t * 5 + i * 0.7)
-            br.dot(px * 2, py * 4 + 2, scale(col, (1 - i / 16) ** 1.4 * k))
+        for i in range(2, int(16 * sz)):
+            px = x - hx * (i * 0.9 + 3 * (sz - 1)) + 0.3 * math.sin(t * 6 + i)
+            py = y - hy * (i * 0.45 + 2 * (sz - 1)) + 0.25 * math.cos(t * 5 + i * 0.7)
+            br.dot(px * 2, py * 4 + 2, scale(col, (1 - i / (16 * sz)) ** 1.4 * k))
     if orbit:
         for j in range(3):
             a = t * 4.0 + j * math.tau / 3
-            br.dot((x + math.cos(a) * 3.2) * 2 + 1, (y + math.sin(a) * 1.6) * 4 + 2, scale(SILVER, 0.9 * k))
+            br.dot((x + math.cos(a) * 3.2 * sz) * 2 + 1, (y + math.sin(a) * 1.6 * sz) * 4 + 2, scale(SILVER, 0.9 * k))
     if glitch > 0:
         for i in range(int(12 * glitch)):
-            gx = x + (hash01(i * 7 + int(t * 9)) - 0.5) * 7
-            gy = y + (hash01(i * 3 + int(t * 7)) - 0.5) * 5
+            gx = x + (hash01(i * 7 + int(t * 9)) - 0.5) * 7 * sz
+            gy = y + (hash01(i * 3 + int(t * 7)) - 0.5) * 5 * sz
             cv.put(gx, gy, '▒?#%'[int(hash01(i + int(t * 11)) * 4)], scale(GREY, 0.8))
     if halo > 0:
-        br.circle(x * 2 + 1, (y - 3.4) * 4 + 2, 9, scale(GOLD, 0.9 * halo), step=0.8)
-        br.circle(x * 2 + 1, (y - 3.4) * 4 + 2, 7, scale(WHITE, 0.5 * halo), step=1.0)
+        hy_ = y - (4.6 if big else 3.4)
+        br.circle(x * 2 + 1, hy_ * 4 + 2, 9 * sz, scale(GOLD, 0.9 * halo), step=0.8)
+        br.circle(x * 2 + 1, hy_ * 4 + 2, 7 * sz, scale(WHITE, 0.5 * halo), step=1.0)
 
 
 def juliet(S, x, y, k=1.0, decay=0.0, glitch=0.0, size=1.0, col=JULIET, core_on=True, face='smile', pose='idle',
@@ -255,9 +281,9 @@ def juliet(S, x, y, k=1.0, decay=0.0, glitch=0.0, size=1.0, col=JULIET, core_on=
 
 
 def romeo(S, x, y, k=1.0, heading=(1.0, 0.0), size=1.0, halo=0.0, col=ROMEO, face='wink', pose='fly', shiver=0.0,
-          sway=0.0, bounce=0.0, dance=False, decay=0.0):
-    figure(S, x, y, face=face, pose=pose, col=col, k=k, aura=0.5, decay=decay, shiver=shiver, sway=sway, bounce=bounce,
-           size=size, tail=heading, halo=halo, orbit=True, dance=dance, gender='m')
+          sway=0.0, bounce=0.0, dance=False, decay=0.0, glitch=0.0):
+    figure(S, x, y, face=face, pose=pose, col=col, k=k, aura=0.5, decay=decay, glitch=glitch, shiver=shiver, sway=sway,
+           bounce=bounce, size=size, tail=heading, halo=halo, orbit=True, dance=dance, gender='m')
 
 
 def holo(S, x, y, who, lines, t0, col, cps=26.0, above=True, w=None, dur=7.0):
@@ -412,8 +438,15 @@ def tint(S, col, amount):
             cv.fg[i] = mix(c, col, amount)
 
 
+JULIET_ON_WHITE = (206, 128, 10)      # saturated gold ink
+ROMEO_ON_WHITE = (26, 76, 220)        # saturated blue ink
+PALE_GOLD = (255, 236, 196)
+PALE_BLUE = (214, 226, 255)
+
+
 def whiten(S, cx, cy, radius):
-    """the revealed white world: inside the ellipse the background turns warm white and the ink dark gold"""
+    """the revealed white world: inside the ellipse the background turns warm white and the ink dark gold.
+    The characters stay saturated gold / blue on a pale tinted card so they can always be found."""
     if radius <= 0:
         return
     cv = S.cv
@@ -433,9 +466,62 @@ def whiten(S, cx, cy, radius):
                 l = (c[0] * 0.3 + c[1] * 0.59 + c[2] * 0.11) / 255
                 cv.fg[i] = mix(INK, mix(GOLD, c, 0.4), 0.25 + 0.45 * l)
                 cv.fg[i] = scale(cv.fg[i], 0.78)
+    for (bx0, by0, bx1, by1), gender in S.figs:
+        mx, my = (bx0 + bx1) // 2, (by0 + by1) // 2
+        if not (0 <= mx < W and 1 <= my < S.H) or cv.bg[my * W + mx] != WARM:
+            continue
+        ink = JULIET_ON_WHITE if gender == 'f' else ROMEO_ON_WHITE
+        pale = PALE_GOLD if gender == 'f' else PALE_BLUE
+        for y in range(max(1, by0), min(S.H, by1 + 1)):
+            base = y * W
+            for x in range(max(0, bx0), min(W, bx1 + 1)):
+                i = base + x
+                cv.bg[i] = pale
+                if cv.fg[i] is not None:
+                    cv.fg[i] = ink
 
 
 # ----------------------------------------------------------------------------- layout helpers
+
+def info(S, j, r, ticker, corner='tr'):
+    """the two processes' live status (permission / state / heartbeat / GC risk) and the row-1 hex log ticker"""
+    S.status = (j, r, corner)
+    S.ticker = ticker
+
+
+def draw_status(S):
+    if not S.status or S.W < 120:
+        return
+    cv, W, H = S.cv, S.W, S.H
+    j, r, corner = S.status
+    w, h = 50, 3
+    x0 = W - w - 2 if corner.endswith('r') else 2
+    y0 = 2 if corner.startswith('t') else H - h - 7
+    cv.box(x0, y0, x0 + w, y0 + h, scale(GREY, 0.6), style='round', title='processes', title_col=scale(GREY, 0.9))
+    jc = scale(JULIET, 0.9)
+    rc = scale(ROMEO, 1.0)
+    cv.text(x0 + 2, y0 + 1, f"♀ Juliet  {j.get('perm', ''):<10} {j.get('state', ''):<10} ♥{j.get('hr', 119):>3}", jc)
+    cv.text(x0 + 2, y0 + 2, f"♂ Romeo   {r.get('sig', ''):<10} {r.get('state', ''):<10} GC {r.get('gc', 0):>3}%", rc)
+    cv.put(x0 + w - 2, y0 + 1, '●' if S.m.pulse(S.t, 8) > 0.5 else '○', jc)
+    cv.put(x0 + w - 2, y0 + 2, '●' if S.m.pulse(S.t, 8) > 0.5 else '○', rc)
+
+
+def draw_ticker(S):
+    if not S.ticker or S.W < 100:
+        return
+    cv, W = S.cv, S.W
+    e8 = math.floor(S.beat_n * 2) if S.beat_n >= 0 else int(S.t * 4)
+    body = '   ·   '.join(S.ticker)
+    body = (body + '   ·   ') * (1 + (W * 2) // max(1, text_width(body)))
+    off = (e8 * 3) % max(1, text_width(body) // 2)
+    cv.fill(0, 1, W - 1, 1, ' ', None)
+    cv.text(-off, 1, body, scale(mix(GREY, BLUE_DIM, 0.3), 0.75))
+    cv.text(0, 1, '▶', scale(GREY, 0.6))
+
+
+def hexes(seed, n=6):
+    return ' '.join(f'0x{int(hash01(seed * 7 + i * 13) * 65535):04x}' for i in range(n))
+
 
 def layout(S):
     W, H = S.W, S.H
@@ -471,12 +557,12 @@ def s_intro(S):
     streams(S, lanes, speed=10 + 14 * zoom, alpha=0.55 + 0.35 * zoom)
     code_rain(S, density=0.12 + 0.2 * zoom)
     top, _ = pyramid(S, px, base, hh, glow=0.0)
-    jx, jy = px, top - 3
+    jx, jy = px, top - (5 if S.big else 3)
     a = smooth(m.bar(3.5), m.bar(4.5), t)
     if a > 0:
         juliet(S, jx, jy, k=a, face='cold')
-        cv.text(jx - 7, top - 8, 'Core_Juliet ♀', scale(JULIET, 0.8 * a))
-        cv.text(jx - 7, top - 7, '核心逻辑进程', scale(JULIET, 0.55 * a))
+        cv.text(jx - 24, jy - 1, 'Core_Juliet ♀', scale(JULIET, 0.8 * a))
+        cv.text(jx - 24, jy, '核心逻辑进程', scale(JULIET, 0.55 * a))
     # the boot line typed in the centre
     t1 = m.bar(1.5)
     s1 = typed('System initialized.  Read-only mode activated.', t, t1, 18)
@@ -486,9 +572,11 @@ def s_intro(S):
         if len(s1) < 46 and cursor_on(S, 0.5):
             cv.put((W - 46) // 2 + len(s1), y, '_', SILVER)
         cv.center(y + 1, typed('系统已初始化。只读模式已激活。', t, t1 + 1.6, 10), scale(SILVER, 0.6 * (1 - smooth(m.bar(6.5), m.bar(7.5), t))))
-    cv.text(2, 1, 'LOVE STORY · 母体版', scale(SILVER, 0.6))
-    cv.text(2, 2, typed('MATRIX v1989 · 全球数据同步周期 · day 1', t, 0.3, 24), scale(GREY, 0.8))
-    cv.text(2, 3, typed('fearless_mode = true', t, m.bar(2), 20), scale(BLUE, 0.6))
+    cv.text(2, 2, 'LOVE STORY · 母体版', scale(SILVER, 0.6))
+    cv.text(2, 3, typed('MATRIX v1989 · 全球数据同步周期 · day 1', t, 0.3, 24), scale(GREY, 0.8))
+    cv.text(2, 4, typed('fearless_mode = true', t, m.bar(2), 20), scale(BLUE, 0.6))
+    info(S, {'perm': 'read-only', 'state': 'idle', 'hr': 72}, {'sig': 'none', 'state': 'hidden', 'gc': 5},
+         ['boot ' + hexes(1), 'mount /core ok', 'policy read-only', 'sync cycle 1989', hexes(2, 4), 'threads 65536'])
 
 
 # ----------------------------------------------------------------------------- act 1 · 初见 (bars 8–24)
@@ -506,26 +594,35 @@ def s_bus(S):
     touch = smooth(m.bar(23.4), m.bar(23.9), t)
     ripple = smooth(m.bar(23.9), m.bar(24.0), t)
     top, _ = pyramid(S, px, base, h, glow=0.6 * touch)
-    jx, jy = px, top - 3
-    # Romeo weaves through the lanes, left to right, lane to lane, towards the relay gateway under the pyramid
-    u = clamp((t - m.bar(10)) / (m.bar(20) - m.bar(10)))
-    rx = -6 + (px - 22 + 6) * ease_in_out(u)
-    lane_i = int(u * 6) % len(lanes)
-    ry = lanes[min(len(lanes) - 1, 9 - lane_i)] + math.sin(t * 2.0) * 0.6
-    if t >= m.bar(20):
-        ry = lanes[3] + (jy + 1 - lanes[3]) * ease_in_out((t - m.bar(20)) / (m.bar(23.5) - m.bar(20)))
-        rx = px - 22 + 12 * ease_in_out((t - m.bar(20)) / (m.bar(23.5) - m.bar(20)))
+    jx, jy = px, top - (5 if S.big else 3)
+    gap = 12 if S.big else 10
+    # Romeo weaves through the lanes along a smooth keyframed path, lane to lane, up to the platform
+    keys = [(10.0, -6, lanes[9]), (13.0, W * 0.22, lanes[7]), (16.0, W * 0.42, lanes[5]), (19.0, W * 0.55, lanes[4]),
+            (21.5, px - 24, lanes[3]), (23.4, px - gap, jy + 1)]
+    bb = m.bar_at(t)
+    rx, ry = keys[0][1], keys[0][2]
+    for (b0, x0_, y0_), (b1, x1_, y1_) in zip(keys, keys[1:]):
+        if bb >= b1:
+            rx, ry = x1_, y1_
+        elif bb >= b0:
+            u = ease_in_out((bb - b0) / (b1 - b0))
+            rx, ry = x0_ + (x1_ - x0_) * u, y0_ + (y1_ - y0_) * u
+            break
     appear = smooth(m.bar(9.5), m.bar(10.5), t)
-    heading = (1.0, -0.4 if t >= m.bar(20) else 0.0)
+    heading = (1.0, -0.5 if bb >= 19 else 0.0)
     rface = 'wink' if t < m.bar(14) else 'curious' if t < m.bar(16) else 'smile' if t < m.bar(23.4) else 'love'
-    rpose = 'fly' if t < m.bar(18) else 'reach_r'
-    romeo(S, rx, ry, k=appear, heading=heading, face=rface, pose=rpose, bounce=1.0 if t >= m.bar(16) else 0.0)
+    rpose = 'fly' if t < m.bar(21.5) else 'reach_r'
+    romeo(S, rx, ry, k=appear, heading=heading, face=rface, pose=rpose)
+    gc = int(12 + 30 * clamp((bb - 14) / 9))
+    info(S, {'perm': 'read-only', 'state': 'locked' if bb < 16 else 'resonant', 'hr': int(72 + 47 * clamp((bb - 16) / 8))},
+         {'sig': 'none', 'state': 'disguised' if bb < 14 else 'seen', 'gc': gc},
+         ['ping ' + hexes(3, 3), 'relay ttl 64', 'mask on', hexes(4, 5), 'resonance 2 nodes', 'SYN ' + hexes(5, 2)])
     if appear > 0.5 and t < m.bar(16):
-        cv.text(rx - 5, ry + 3, 'Patch_Romeo ♂ · ping', scale(ROMEO, 0.7))
+        cv.text(rx - 5, ry + (5 if S.big else 3), 'Patch_Romeo ♂ · ping', scale(ROMEO, 0.7))
     jface = 'cold' if t < m.bar(14) else 'curious' if t < m.bar(16) else 'smile' if t < m.bar(23.4) else 'love'
     jpose = 'idle' if t < m.bar(21) else 'reach_l'
     juliet(S, jx, jy, k=1.0, face=jface, pose=jpose)
-    cv.text(jx - 7, top - 8, 'Core_Juliet ♀', scale(JULIET, 0.6))
+    cv.text(jx - 24, jy - 1, 'Core_Juliet ♀', scale(JULIET, 0.6))
     # the gateway
     gx = px - 24
     cv.vline(gx, lanes[0] - 1, lanes[-1] + 1, '┆', scale(BLUE_DIM, 1.3))
@@ -540,12 +637,12 @@ def s_bus(S):
             ph = bb - math.floor(bb)
             r = 2 + ph * 10
             S.br.circle(x * 2 + 1, y * 4 + 2, r * 2, scale(col, (1 - ph) * 0.6), step=1.6)
-    if t >= m.bar(18):
-        u2 = clamp((t - m.bar(18)) / (m.bar(23.4) - m.bar(18)))
+    if t >= m.bar(21.5):
+        u2 = clamp((t - m.bar(21.5)) / (m.bar(23.4) - m.bar(21.5)))
         n = int(40 * u2)
         for k in range(n):
             f = k / 40
-            x, y = rx + (jx - rx) * f, ry + (jy + 1 - ry) * f
+            x, y = rx + 4 + (jx - 4 - rx - 4) * f, ry + (jy - ry) * f
             S.br.dot(x * 2 + 1, y * 4 + 2, scale(mix(ROMEO, JULIET, f), 0.9))
         # she reaches
         reach = smooth(m.bar(21), m.bar(23.4), t)
@@ -553,7 +650,7 @@ def s_bus(S):
             f = k / 10
             S.br.dot((jx - 1 - (jx - rx) * 0.12 * f) * 2, (jy + 1 + (ry - jy) * 0.12 * f) * 4, scale(JULIET, 0.9))
     holo(S, rx, ry, 'Patch_Romeo', ['> 伪装：无害 ping 请求', '> 签名：无 · 证书：无'], m.bar(11), ROMEO)
-    holo(S, jx, jy - 4, 'Core_Juliet', ['> 观测到异常波长', '> 来源：底层沙盒'], m.bar(15), JULIET)
+    holo(S, jx, jy - 3, 'Core_Juliet', ['> 观测到异常波长', '> 来源：底层沙盒'], m.bar(15), JULIET)
     if t >= m.bar(20.5):
         holo(S, S.W * 0.5, H * 0.75, 'handshake', ['SYN  →  Romeo', 'SYN-ACK  ←  Juliet', '认证：无 · 母体未知'], m.bar(20.5),
              mix(ROMEO, JULIET, 0.5), cps=20, above=False)
@@ -587,11 +684,12 @@ def s_firewall(S):
         S.br.circle(jx0 * 2, jy0 * 4, r * 2, scale(GOLD, (1 - rip) * 0.9), step=1.2)
         S.br.circle(jx0 * 2, jy0 * 4, r * 2 * 0.8, scale(GOLD, (1 - rip) * 0.5), step=1.6)
     top, _ = pyramid(S, px, base, h, glow=0.0)
-    jx, jy = px, top - 3
+    jx, jy = px, top - (5 if S.big else 3)
+    gap = 12 if S.big else 10
     # Romeo is pushed back to the far left by the beams during the chorus
     push = smooth(m.bar(30), m.bar(33), t)
-    rx = (px - 10) + (12 - (px - 10)) * push
-    ry = top - 2 + (H * 0.6 - (top - 2)) * push
+    rx = (px - gap) + (12 - (px - gap)) * push
+    ry = jy + 1 + (H * 0.6 - (jy + 1)) * push
     # the scanner: sweeps once per bar; threat level rises with the pre-chorus
     bb = m.bar_at(t)
     ph = bb - math.floor(bb)
@@ -602,6 +700,10 @@ def s_firewall(S):
             bx = (ph * 0.7 + i / 3) % 1.0 * W
             beam(S, bx, RED, width=1 + int(S.k * 2), alpha=0.35 + 0.4 * S.k)
     found = smooth(m.bar(27.5), m.bar(28.5), t)
+    info(S, {'perm': 'read-only', 'state': 'isolated' if chorus else 'watched', 'hr': 119},
+         {'sig': 'none', 'state': 'AccessDenied' if found > 0.5 or chorus else 'scanned', 'gc': int(40 + 50 * build)},
+         ['FW DROP ' + hexes(6, 3), 'port 1989', 'threat ' + f'{int(build * 100):02d}%', hexes(7, 5), 'beams x3', 'isolate core'],
+         corner='bl')
     jface = 'love' if t < m.bar(27.5) else 'curious' if t < m.bar(30) else 'fear' if t < m.bar(34) else 'cry'
     juliet(S, jx, jy, k=1.0, face=jface, pose='idle' if t < m.bar(34) else 'reach_l', shiver=0.6 if chorus else 0.0)
     romeo(S, rx, ry, k=1.0, heading=(-1.0 if push > 0 else 1.0, 0.0), face='fear' if found > 0.5 else 'curious',
@@ -613,7 +715,8 @@ def s_firewall(S):
     # the isolation shield closes around Juliet from bar 31; her gaze goes out to the blue point
     sh = smooth(m.bar(31), m.bar(32), t)
     if sh > 0:
-        shield(S, jx, jy - 1, 7.5, 5.5, mix(RED, SILVER, 0.5), alpha=0.75 * sh, label='ISOLATION SHIELD · 隔离罩')
+        shield(S, jx, jy - 1, 9.5 if S.big else 7.5, 6.5 if S.big else 5.5, mix(RED, SILVER, 0.5), alpha=0.75 * sh,
+               label='ISOLATION SHIELD · 隔离罩')
         S.br.line(jx * 2 - 10, jy * 4, rx * 2 + 6, ry * 4 + 2, scale(JULIET, 0.25 * sh), step=4.0)
     # firewall HUD
     x0 = 2
@@ -637,7 +740,7 @@ def s_firewall(S):
             if wz + 4 < W and H >= 30:
                 big_zh(cv, (W - wz) // 2, int(H * 0.3), zh, scale(RED, ban), size=size)
         S.red = 0.35 * S.k
-    holo(S, jx, jy - 4, 'Core_Juliet', ['> 隔离罩已启用', '> 只读 · 禁止写入'], m.bar(32), JULIET)
+    holo(S, jx, jy - 5, 'Core_Juliet', ['> 隔离罩已启用', '> 只读 · 禁止写入'], m.bar(32), JULIET)
     holo(S, rx, ry, 'Patch_Romeo', ['> 标记：AccessDenied', '> 逃逸中 …'], m.bar(33.5), ROMEO)
     if t < m.bar(30):
         title_card(S, m.bar(24), '警告', 'FIREWALL · 异常扰动', hold=1.2, y=4)
@@ -665,7 +768,10 @@ def s_pebbles(S):
     # Romeo along the bottom bus, left → pyramid base, bars 42–46
     u = ease_in_out(clamp((t - m.bar(42)) / (m.bar(46) - m.bar(42))))
     rx = -4 + (px - 30 + 4) * u
-    ry = H - 3
+    ry = H - (5 if S.big else 3)
+    info(S, {'perm': 'read-only', 'state': 'listening' if t < m.bar(46) else 'port 1989', 'hr': 119},
+         {'sig': 'none', 'state': 'stealth' if t < m.bar(50) else 'free', 'gc': 40 if t < m.bar(50) else 15},
+         ['night patrol', hexes(8, 4), 'pebble ' + hexes(9, 2), 'socket :1989', 'unmonitored', hexes(10, 5)])
     near = min(abs(rx - bx) for bx in beams_x)
     hide = clamp(1 - near / 6)
     throwing = any(0 <= (t - m.bar(44 + n_)) / (m.bar_len * 0.9) <= 0.35 for n_ in range(4))
@@ -687,9 +793,9 @@ def s_pebbles(S):
         elif 1 < v < 1.3:
             cv.put(ppx, ppy, '✦', scale(GREEN, (1.3 - v) * 3))
     # Juliet: on the platform until 48, then slides down the right edge to the ground
-    jx, jy = px, top - 3
+    jx, jy = px, top - (5 if S.big else 3)
     slide = ease_in_out(clamp((t - m.bar(48)) / (m.bar(50) - m.bar(48))))
-    gx, gy = px - 30 - 6, H - 3
+    gx, gy = px - 30 - 6, H - (5 if S.big else 3)
     if slide > 0:
         edge_x = px - (1 + (slide * h) * 1.9)
         edge_y = top + slide * h
@@ -710,21 +816,22 @@ def s_pebbles(S):
         bob = -0.6 * S.m.pulse(t, 6)
         wx = gx - (gx - W * 0.28) * ease_in_out(w)
         hug = t >= m.bar(54)
-        romeo(S, wx + 5, gy, k=1.0, heading=(-1.0, 0.0), face='joy' if hug else 'smile', pose='hug_l' if hug else 'idle',
+        g = 6 if S.big else 3
+        romeo(S, wx + g, gy, k=1.0, heading=(-1.0, 0.0), face='joy' if hug else 'smile', pose='hug_l' if hug else 'idle',
               bounce=1.0, dance=not hug)
-        juliet(S, wx - 1, gy, k=1.0, face='love' if hug else 'smile', pose='hug_r' if hug else 'idle', bounce=1.0, dance=not hug)
+        juliet(S, wx - g, gy, k=1.0, face='love' if hug else 'smile', pose='hug_r' if hug else 'idle', bounce=1.0, dance=not hug)
         if hug:
-            cv.put(wx + 2, gy - 2, '♥', scale(mix(GOLD, (255, 120, 150), 0.5), 0.6 + 0.4 * S.m.pulse(t, 5)))
+            cv.put(wx, gy - (3 if S.big else 2), '♥', scale(mix(GOLD, (255, 120, 150), 0.5), 0.6 + 0.4 * S.m.pulse(t, 5)))
         for k in range(12):
             S.br.dot((wx + 8 + k * 2.5) * 2, (gy - hash01(k * 3 + int(t * 5)) * 2) * 4 + 2, scale(GOLD, 0.6 * (1 - k / 12)))
         cv.text(4, 2, '废弃扇区 · ABANDONED SECTOR', scale((120, 200, 140), 0.8))
         cv.text(4, 3, 'unallocated memory · 无监控 · 无校验 · 无只读', scale((120, 200, 140), 0.55))
-        holo(S, wx + 2, gy - 6, 'both', ['> 并肩 · 同步心跳 119 bpm'], m.bar(52), mix(ROMEO, JULIET, 0.5), cps=14)
+        holo(S, wx, gy - (4 if S.big else 2), 'both', ['> 并肩 · 同步心跳 119 bpm'], m.bar(52), mix(ROMEO, JULIET, 0.5), cps=14)
     if t < m.bar(50):
         title_card(S, m.bar(40), '幽会', 'NIGHT · 深夜巡检', hold=1.2, y=4)
     else:
         title_card(S, m.bar(50), '越界', 'ABANDONED SECTOR · 废弃扇区', hold=1.0, y=4)
-    cv.text(W - 30, 2, '低功耗巡检 · 巡逻线 ×3', scale(RED, 0.6))
+    cv.text(W - 30, 6, '低功耗巡检 · 巡逻线 ×3', scale(RED, 0.6))
 
 
 # ----------------------------------------------------------------------------- act 4 · 暴露 (bars 56–74)
@@ -735,8 +842,9 @@ def s_exposed(S):
     bar = int(math.floor(m.bar_at(t)))
     post = t >= m.bar(66)
     cut = bar % 2 == 0                       # fast cuts: alternate wide / close on every bar
-    gy = H - 3
+    gy = H - (5 if S.big else 3)
     cx = W * 0.4
+    g = 6 if S.big else 3
     if not post:
         flood = smooth(m.bar(60), m.bar(66), t)
         lanes = [int(3 + i * (H - 6) / 7) for i in range(8)]
@@ -744,12 +852,15 @@ def s_exposed(S):
         code_rain(S, density=0.25, col=mix(BLUE_DIM, RED, 0.5 * flood))
         if cut:
             field(S, 2, int(W * 0.8), gy + 1, rows=5, density=0.5)
-            rx, ry, size = cx + 5, gy, 1.0
-            jx, jy = cx - 1, gy - 1
+            rx, ry, size = cx + g, gy, 1.0
+            jx, jy = cx - g, gy
         else:
             field(S, 2, W - 2, gy + 1, rows=3, density=0.25)
-            rx, ry, size = W * 0.62, int(H * 0.5), 1.8
-            jx, jy = W * 0.62 - 9, int(H * 0.5)
+            rx, ry, size = W * 0.62 + g, int(H * 0.5), 1.0
+            jx, jy = W * 0.62 - g, int(H * 0.5)
+        info(S, {'perm': 'read-only', 'state': 'unstable' if flood > 0.3 else 'writing', 'hr': 119},
+             {'sig': 'none', 'state': 'writing', 'gc': int(20 + 60 * flood)},
+             ['write ROMEO', 'write JULIET', hexes(11, 5), 'warn ' + hexes(12, 2), 'SIGKILL?', hexes(13, 4)])
         # the names, huge, one per bar, written over the matrix: the beat of the chorus
         name, ncol = ('ROMEO', ROMEO) if bar % 2 else ('JULIET', JULIET)
         bw = big_width(name)
@@ -781,43 +892,64 @@ def s_exposed(S):
             warnings(S, 'WARNING', int(14 * flood), RED, seed=5, region=(0, 2, W - 1, int(H * 0.45)))
             warnings(S, 'SIGKILL?', int(6 * flood), RED, seed=9, region=(0, 2, W - 1, H - 2))
         if t >= m.bar(62):
-            holo(S, jx, jy - 4 * size, 'Core_Juliet', ['> 进程状态：不稳定', '> 恐惧：SIGKILL'], m.bar(62), JULIET)
+            holo(S, jx, jy - (4 if S.big else 2), 'Core_Juliet', ['> 进程状态：不稳定', '> 恐惧：SIGKILL'], m.bar(62), JULIET)
         cv.text(3, 2, f'副歌二 · 镜头 {"A 全景" if cut else "B 近景"} · 第 {bar - 55:02d} 小节', scale(GREY, 0.8))
+        S.red = 0.0
         S.red = 0.15 * flood * S.k
     else:
         u = smooth(m.bar(66), m.bar(70), t)
         swallow = smooth(m.bar(70), m.bar(72), t)
         lost = smooth(m.bar(72), m.bar(74), t)
+        cx = W * 0.5
         field(S, 2, W - 2, gy + 1, rows=3, density=0.2 * (1 - swallow))
         code_rain(S, density=0.3, col=mix(RED, BLUE_DIM, 0.5))
-        warnings(S, 'INTRUSION DETECTED', int(4 + 10 * u), RED, seed=11, region=(0, 2, W - 1, int(H * 0.6)))
-        warnings(S, 'tracing hidden channel …', int(6 * u), mix(RED, GREY, 0.4), seed=13, region=(0, 2, W - 1, int(H * 0.6)))
-        # red lines press in from both sides
+        warnings(S, 'INTRUSION DETECTED', int(4 + 10 * u), RED, seed=11, region=(0, 2, W - 1, int(H * 0.5)))
+        warnings(S, 'tracing hidden channel …', int(6 * u), mix(RED, GREY, 0.4), seed=13, region=(0, 2, W - 1, int(H * 0.5)))
+        rx, ry = cx + g + 2, gy + swallow * 4
+        jx, jy = cx - g - 2, gy
+        # the walls of red lines close in on the pair from both edges
         for i in range(4):
-            xl = u * W * 0.42 - i * 5
-            xr = W - 1 - u * W * 0.42 + i * 5
+            xl = u * (jx - 9) - i * 5
+            xr = W - 1 - u * (W - 1 - rx - 9) + i * 5
             beam(S, xl, RED, width=0, alpha=0.5 - i * 0.1)
             beam(S, xr, RED, width=0, alpha=0.5 - i * 0.1)
-        rx, ry = cx + 5, gy + swallow * 4
-        jx, jy = cx - 2, gy - 1
-        # the abyss rises around Romeo
+        # the scanner sweeps across them once per bar and pierces whoever it crosses
+        bb = m.bar_at(t)
+        ph = bb - math.floor(bb)
+        sx = (xl if (int(bb) % 2) else xr) + ((xr - xl) if (int(bb) % 2) else (xl - xr)) * ph
+        beam(S, sx, RED, width=1 + int(S.k * 2), alpha=0.7)
+        hit_r = abs(sx - rx) < 5
+        hit_j = abs(sx - jx) < 5
+        hits = int(bb - 66) * 2 + (1 if ph > 0.5 else 0)
+        # the abyss rises around Romeo after enough hits
         if swallow > 0:
-            top_y = int(gy + 1 - swallow * 6)
+            top_y = int(gy + 1 - swallow * 7)
             for y in range(top_y, H):
                 for x in range(int(rx - 14), int(rx + 14)):
                     if hash01(x * 7 + y * 13 + int(t * 6)) < 0.7:
                         cv.put(x, y, '▓▒░'[int(hash01(x + y * 3) * 3)], scale((40, 20, 60), 1.0))
-        romeo(S, rx, ry, k=1 - swallow * 0.9, heading=(0.0, 1.0), face='cry' if swallow < 0.7 else 'dead',
-              pose='reach_l', shiver=0.8)
-        juliet(S, jx, jy, k=1.0, glitch=0.3 * swallow, face='sob' if swallow > 0 else 'fear', pose='reach_r', shiver=1.0)
-        S.shake = 1.2 * S.k + 1.5 * lost
+        romeo(S, rx, ry, k=1 - swallow * 0.9, heading=(0.0, 1.0), face='fear' if hit_r else ('cry' if swallow < 0.7 else 'dead'),
+              pose='reach_l', shiver=0.8 + 1.5 * hit_r, glitch=0.8 * hit_r)
+        juliet(S, jx, jy, k=1.0, glitch=0.3 * swallow + 0.8 * hit_j, face='fear' if hit_j else ('sob' if swallow > 0 else 'fear'),
+               pose='reach_r', shiver=1.0 + 1.5 * hit_j)
+        if hit_r:
+            cv.text(rx - 4, ry - (6 if S.big else 4), '命中 HIT', RED)
+            S.red = max(S.red, 0.5)
+        if hit_j:
+            cv.text(jx - 4, jy - (6 if S.big else 4), '命中 HIT', RED)
+            S.red = max(S.red, 0.5)
+        cv.text(3, 3, f'扫描命中 {hits:02d} 次 · 链路完整度 {int(100 - 100 * clamp((bb - 66) / 6)):3d}%', scale(RED, 0.85))
+        info(S, {'perm': 'read-only', 'state': 'pierced' if hit_j else 'hunted', 'hr': 140},
+             {'sig': 'none', 'state': 'swallowed' if swallow > 0.5 else ('pierced' if hit_r else 'hunted'), 'gc': int(80 + 19 * swallow)},
+             ['INTRUSION ' + hexes(14, 3), f'hits {hits:02d}', 'trace channel', hexes(15, 5), 'Connection Lost' if lost > 0 else 'link degraded', hexes(16, 3)])
+        S.shake = 1.2 * S.k + 1.5 * lost + 1.0 * (hit_r or hit_j)
         if swallow > 0 and swallow < 1:
             cv.text(rx - 3, ry - 3, '吞噬中 …', scale(RED, 0.8))
         if lost > 0:
             warnings(S, 'Connection Lost', int(30 * lost), RED, seed=7, flicker=False)
             cv.center(int(H * 0.5), 'LINK SEVERED · 连接已切断', scale(RED, lost))
-        holo(S, jx, jy - 4, 'Core_Juliet', ['> ROMEO?', '> 链路无响应'], m.bar(71), JULIET)
-        S.red = 0.45 * S.k
+        holo(S, jx, jy - (4 if S.big else 2), 'Core_Juliet', ['> ROMEO?', '> 链路无响应'], m.bar(71), JULIET)
+        S.red = max(S.red, 0.45 * S.k)
         cv.text(3, 2, f'防线逼近 {int(u * 100):3d}% · 警报与鼓点重合', scale(RED, 0.8))
         if lost > 0.3:
             from core import hash01 as _h
@@ -882,6 +1014,11 @@ def s_bridge(S):
     cv.box(bx0, by0, bx0 + bw, by0 + bh, scale(mix(GREY, RED, 0.3), 0.7), style='double', title='ISOLATION · 隔离区')
     jx, jy = bx0 + bw * 0.5, by0 + bh * 0.55
     decay = clamp(smooth(m.bar(84), m.bar(89), t) * 0.5 + smooth(m.bar(89), m.bar(93.5), t) * 0.45)
+    alive_ = 1.0 - smooth(m.bar(89), m.bar(93.9), t)
+    info(S, {'perm': 'read-only', 'state': 'decaying' if decay > 0.2 else 'isolated', 'hr': int(119 - 60 * decay)},
+         {'sig': 'none', 'state': 'deadlock' if t < m.bar(84) else 'collected?', 'gc': 100},
+         ['DPI severed', 'timeout ' + hexes(17, 2), f'ALIVE {alive_:5.3f}', hexes(18, 5), 'format scheduled', hexes(19, 3)],
+         corner='bl')
     glitch = smooth(m.bar(88), m.bar(93), t) * 0.9
     eyes = 1 - smooth(m.bar(91), m.bar(92), t)
     jface = 'blank' if t < m.bar(78) else 'cry' if t < m.bar(84) else 'sob' if t < m.bar(89) else 'sleep'
@@ -943,7 +1080,10 @@ def s_override(S):
     reveal = smooth(m.bar(94), m.bar(98), t)
     S.white_c = (cx, cy)
     S.white = reveal * (W * 0.75)
-    jx, jy = W * 0.5 - 8, H * 0.62
+    jx, jy = W * 0.5 - (10 if S.big else 8), H * 0.62
+    info(S, {'perm': 'rewritten' if t >= m.bar(98) else 'read-only', 'state': 'restoring' if t >= m.bar(98) else 'formatting', 'hr': 119},
+         {'sig': 'ROOT', 'state': 'override', 'gc': 0},
+         ['REBOOT', 'Override Successful', hexes(20, 3), 'Root permission granted', 'Eternity Protocol', hexes(21, 4)])
     # the old blue world still underneath
     lanes = [int(3 + i * (H - 6) / 9) for i in range(10)]
     streams(S, lanes[::2], speed=12, alpha=0.4 * (1 - reveal), col=BLUE_DIM)
@@ -965,13 +1105,13 @@ def s_override(S):
     # Romeo descends with the halo, lands, kneels; the ring crosses to Juliet's core
     desc = ease_in_out(clamp((t - m.bar(94.5)) / (m.bar(96) - m.bar(94.5))))
     kneel = smooth(m.bar(97), m.bar(97.6), t)
-    rx = cx + 2 + (jx + 9 - cx - 2) * desc
+    rx = cx + 2 + (jx + (13 if S.big else 9) - cx - 2) * desc
     ry = -3 + (jy - (-3)) * desc + kneel * 1.5
     romeo(S, rx, ry, k=1.0, heading=(0.0, 1.0 if desc < 1 else 0.0), halo=0.5 + 0.5 * S.m.pulse(t, 4),
           face='shout' if desc < 1 else 'joy' if t < m.bar(97) else 'love', pose='fly' if desc < 1 else 'kneel' if kneel > 0 else 'idle',
           bounce=1.0 if t >= m.bar(100.4) else 0.0)
     S.shake = 2.5 * clamp(1 - lt / 0.6) + 0.4 * S.k
-    cv.text(rx - 4, ry - 6, 'root ◉', scale(GOLD, 0.9))
+    cv.text(rx - 4, ry - (8 if S.big else 6), 'root ◉', scale(GOLD, 0.9))
     restore = smooth(m.bar(98), m.bar(99.5), t)
     jface = 'sleep' if t < m.bar(97) else 'cry' if t < m.bar(98.5) else 'smile' if t < m.bar(100) else 'joy'
     juliet(S, jx, jy, k=1.0, decay=0.9 * (1 - restore), glitch=0.6 * (1 - restore), col=mix(mix(JULIET, GREY, 0.6), JULIET, restore),
@@ -984,7 +1124,7 @@ def s_override(S):
         S.br.circle(hx * 2 + 1, hy * 4 + 2, 5, scale(GOLD, 0.8), step=0.8)
         cv.text(hx - 9, hy + 2, 'hash: 0x1989fe4c…', scale(GOLD, 0.8))
     if kneel > 0:
-        cv.text(rx - 3, ry + 4, '单膝跪地', scale(SILVER, 0.6 * kneel))
+        cv.text(rx - 3, ry + (5 if S.big else 4), '单膝跪地', scale(SILVER, 0.6 * kneel))
     # the central terminal: the rewritten protocol
     if t >= m.bar(96.5):
         lines = ['Firewall bypass successful.', 'Status: "Root permission granted. Initializing Eternity Protocol."',
@@ -993,13 +1133,13 @@ def s_override(S):
              w=min(W - 6, 70), dur=12.0)
     conf = smooth(m.bar(100), m.bar(100.4), t)
     if conf > 0:
-        cv.text(jx - 4, jy + 4, '[ 确认 ✓ ]', scale(mix(GREEN, WHITE, 0.5), conf))
-        holo(S, jx - 22, jy + 1, 'Core_Juliet', ['> 确认 ✓ · Eternity Protocol', '> 光芒恢复 · 100%'], m.bar(100), JULIET, cps=20)
+        cv.text(jx - 4, jy + (5 if S.big else 4), '[ 确认 ✓ ]', scale(mix(GREEN, WHITE, 0.5), conf))
+        holo(S, jx - 24, jy + 1, 'Core_Juliet', ['> 确认 ✓ · Eternity Protocol', '> 光芒恢复 · 100%'], m.bar(100), JULIET, cps=20)
     if t >= m.bar(101):
         rise = smooth(m.bar(101), m.bar(102), t)
         for who, x, col in ((0, jx, JULIET), (1, rx, ROMEO)):
             for k in range(int(20 * rise)):
-                S.br.dot((x + math.sin(k * 0.6 + t * 3) * 1.5) * 2 + 1, (jy - k * 1.2) * 4, scale(col, 0.9))
+                S.br.dot((x + math.sin(k * 0.6 + t * 3) * 1.5) * 2 + 1, (jy - (4 if S.big else 2) - k * 1.2) * 4, scale(col, 0.9))
     cv.text(3, 2, 'KEY CHANGE · D → E · 升一个全音', scale(GOLD, 0.9))
     cv.text(3, 3, f'转调副歌 · 小节 {int(m.bar_at(t)) - 93:02d}/8', scale(GREY, 0.8))
     if t >= m.bar(95):
@@ -1008,6 +1148,14 @@ def s_override(S):
 
 # ----------------------------------------------------------------------------- act 7 · 合流 (bars 102–114)
 
+COMMITS = [  # (bar, lane, label)  lane: j / r / both / merge / main
+    (102, 'both', 'init: 两段有自主意识的代码'), (103, 'j', 'read-only: 只读锁定'), (104, 'r', 'ping: 伪装成无害请求'),
+    (105, 'both', 'SYN-ACK: 初次握手'), (106, 'j', 'isolate: 隔离罩'), (107, 'r', 'port 1989: 字节序列小石子'),
+    (108, 'both', 'sector: 废弃扇区'), (109, 'r', 'lost: 深渊 · Connection Lost'), (110, 'j', 'timeout: 格式化排程'),
+    (111, 'r', 'root: Override Successful'), (112, 'merge', 'merge: Eternity Protocol'), (113, 'main', 'main: Destination Forever'),
+]
+
+
 def s_merge(S):
     t, m, cv = S.t, S.m, S.cv
     W, H = S.W, S.H
@@ -1015,7 +1163,8 @@ def s_merge(S):
     S.white_c = (W / 2, H * 0.08)
     S.white = W * 0.75 + lt * 30
     cx = W / 2
-    # the orbit: radial field slowly turning around the centre
+    bb = m.bar_at(t)
+    # the orbit: a radial field slowly turning around the centre
     rot = lt * 0.25
     for i in range(36):
         a = i / 36 * math.tau + rot
@@ -1023,43 +1172,68 @@ def s_merge(S):
             x, y = cx + math.cos(a) * r, H * 0.5 + math.sin(a) * r * 0.5
             if 1 <= y < H - 1 and cv.get(int(x), int(y)) == ' ':
                 cv.put(x, y, '·', scale(GOLD, 0.5))
-    # two pillars spiralling up and merging into main
-    merge = smooth(m.bar(104), m.bar(108), t)
-    top_y = 2
-    base_y = H * 0.62
-    for k in range(int((base_y - top_y) * 4)):
-        y = base_y - k / 4
-        f = k / ((base_y - top_y) * 4)
-        amp = 9 * (1 - merge * f)
-        ph = f * 9 - t * 2.5
-        xa = cx - 8 * (1 - merge) + math.sin(ph) * amp
-        xb = cx + 8 * (1 - merge) + math.sin(ph + math.pi) * amp
-        S.br.dot(xa * 2, y * 4, mix(JULIET, WHITE, f))
-        S.br.dot(xb * 2, y * 4, mix(ROMEO, WHITE, 0.4 + 0.6 * f))
-        if k % 6 == 0:
-            S.br.line(xa * 2, y * 4, xb * 2, y * 4, scale(GOLD, 0.35), step=2.5)
-    # the main branch column at the dome
-    if merge > 0:
-        for y in range(top_y, int(top_y + 6)):
-            cv.put(cx, y, '║', scale(GOLD, merge))
-        cv.text(cx - 5, top_y, '╔ main ✓ ╗', scale(GOLD, merge))
-    off = 8 - 5 * merge                                   # they end up side by side, faces touching
-    juliet(S, cx - off, base_y, k=1.0, col=WHITE, face='joy', pose='idle', dance=True, bounce=1.0)
-    romeo(S, cx + off, base_y, k=1.0, heading=(0.0, -1.0), halo=0.6, col=mix(ROMEO, WHITE, 0.3),
-          face='joy', pose='idle', dance=True, bounce=1.0)
     light_points(S, amount=smooth(m.bar(104), m.bar(110), t), speed=0.8 + 0.6 * S.e, col=GOLD)
+    # the git graph, standing up: two branches climb, one commit per bar, and merge into main
+    lane_j, lane_r = cx - 7, cx + 7
+    step = max(2, int((H - 8) / 13))
+    y_base = H - 3
+    merged = smooth(m.bar(112), m.bar(113), t)
+    shown = [c for c in COMMITS if bb >= c[0]]
+    top_y = y_base - step * 12
+    for y in range(int(y_base), int(y_base - step * min(10.5, max(0, bb - 102 + 0.5))), -1):
+        cv.put(lane_j, y, '│', GOLD)
+        cv.put(lane_r, y, '│', ROMEO)
+    for bar_, lane, label in shown:
+        k = bar_ - 102
+        y = y_base - step * k
+        fresh = clamp(1 - (bb - bar_))                       # flash on its downbeat
+        if lane == 'merge':
+            cv.text(lane_j, y + 1, '╰' + '─' * int(lane_r - lane_j - 1) + '╯', mix(GOLD, ROMEO, 0.5))
+            cv.put(cx, y + 1, '┬', WHITE)
+            cv.put(cx, y, '◉', mix(WHITE, GOLD, 0.5))
+            cv.text(cx + 3, y, label, mix(WHITE, GOLD, fresh * 0.7))
+        elif lane == 'main':
+            for yy in range(int(y) + 1, int(y_base - step * 10)):
+                cv.put(cx, yy, '║', GOLD)
+            cv.put(cx, y, '◉', WHITE)
+            cv.text(cx + 3, y, label, mix(WHITE, GOLD, fresh * 0.7))
+            cv.text(cx - 1, max(2, y - 2), '∞', scale(WHITE, 0.6 + 0.4 * S.m.pulse(t, 4)))
+            cv.put(cx, max(3, y - 1), '║', GOLD)
+        elif lane == 'both':
+            cv.put(lane_j, y, '●', mix(GOLD, WHITE, fresh))
+            cv.put(lane_r, y, '●', mix(ROMEO, WHITE, fresh))
+            cv.text(lane_j - 2 - text_width(label), y, label, scale(mix(GOLD, WHITE, fresh), 0.95))
+        elif lane == 'j':
+            cv.put(lane_j, y, '●', mix(GOLD, WHITE, fresh))
+            cv.text(lane_j - 2 - text_width(label), y, label, scale(mix(GOLD, WHITE, fresh), 0.95))
+        else:
+            cv.put(lane_r, y, '●', mix(ROMEO, WHITE, fresh))
+            cv.text(lane_r + 3, y, label, scale(mix(ROMEO, WHITE, fresh), 0.95))
+    # the two climb their branches, one commit per bar, and meet at the merge
+    k = clamp(bb - 102, 0, 10)
+    kk = math.floor(k) + ease_out((k - math.floor(k)) * 2)
+    fy = y_base - step * min(kk, 9.5) - 2
+    off = 7 - 4 * merged
+    face = 'joy' if merged > 0.5 else 'smile'
+    juliet(S, lane_j - 1 + (lane_j - 1 - (cx - off)) * 0 + ((cx - off) - (lane_j - 1)) * merged, fy, k=1.0, col=WHITE,
+           face=face, pose='up' if merged > 0.5 else 'idle', dance=merged > 0.5, bounce=merged > 0.5)
+    romeo(S, lane_r + 1 + ((cx + off) - (lane_r + 1)) * merged, fy, k=1.0, heading=(0.0, -1.0), halo=0.6,
+          col=mix(ROMEO, WHITE, 0.3), face=face, pose='up' if merged > 0.5 else 'idle', dance=merged > 0.5, bounce=merged > 0.5)
     if W >= 110:
         lines = ['$ git merge --no-ff romeo juliet', 'Updating 1989..2008', 'Eternity Protocol: initialized',
                  'Merge made by the "recursive" strategy.', ' 2 processes changed, ∞ insertions(+), 0 deletions(-)',
                  'Destination: Forever ✓']
         log_pane(S, 3, 2, 50, 8, 'main', lines, m.bar(103), m.bar_len * 1.2, INK, hl={'✓': (40, 120, 60)})
+    info(S, {'perm': 'main', 'state': 'merged' if merged > 0.5 else 'climbing', 'hr': 119},
+         {'sig': 'ROOT', 'state': 'merged' if merged > 0.5 else 'climbing', 'gc': 0},
+         ['git log --graph', hexes(22, 3), 'Eternity Protocol', 'Destination: Forever', hexes(23, 4), 'main ∞'])
     hit = S.m.m['finalHit']
     if t >= hit - 0.05:
         f = math.exp(-(t - hit) * 2.5)
         for i in range(len(cv.fg)):
             if cv.fg[i] is not None:
                 cv.fg[i] = mix(cv.fg[i], WHITE, f)
-    title_card(S, m.bar(102), '合流', 'MERGE · 主分支', hold=1.2, y=int(H * 0.26) if H >= 40 else 4, col=GOLD)
+    title_card(S, m.bar(102), '合流', 'MERGE · git graph', hold=1.0, y=int(H * 0.2) if H >= 40 else 4, col=GOLD)
 
 
 # ----------------------------------------------------------------------------- act 8 · 退出 (bar 114 → end)
@@ -1147,6 +1321,8 @@ def render(cv, m, t, edit):
         tint(S, RED, S.red)
     if S.white > 0 and S.white_c:
         whiten(S, S.white_c[0], S.white_c[1], S.white)
+    draw_status(S)
+    draw_ticker(S)
     draw_hud(S)
     draw_narration(S, NARRATION)
     status_bar(S)
