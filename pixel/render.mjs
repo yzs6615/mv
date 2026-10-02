@@ -6,6 +6,7 @@
 //   node pixel/render.mjs --still 96.4 --scale 3                   single frame(s)
 //   node pixel/render.mjs --range 90:112                           1080p clip of a range, with audio
 //   node pixel/render.mjs --all                                    the whole film -> pixel/build/only_one_pixel_1080p60.mp4
+//   node pixel/render.mjs --all --share                            same frames, small 1080p30 copy for sending
 //   node pixel/render.mjs --cues                                   SFX cue list -> pixel/build/cues.json
 import { chromium } from 'playwright';
 import http from 'http';
@@ -127,11 +128,14 @@ async function concatAndEncode(files, out, t0, dur, audio) {
   const scale = parseInt(arg('scale', 4), 10);
   const args = ['-f', 'concat', '-safe', '0', '-i', list];
   if (audio) args.push('-ss', String(t0), '-t', String(dur), '-i', audio);
+  // --share: a small copy for sending (30 fps, veryslow, CRF 25, about 25 MB for the whole film)
+  const share = argv.includes('--share');
+  const outFps = share ? 30 : FPS;
   // nearest-neighbour upscale in RGB, then an explicit BT.709 conversion (tagged, so players do not guess)
-  args.push('-vf', `scale=${W * scale}:${H * scale}:flags=neighbor,scale=out_color_matrix=bt709:out_range=tv:flags=neighbor,format=yuv420p`,
+  args.push('-vf', `${share ? 'fps=30,' : ''}scale=${W * scale}:${H * scale}:flags=neighbor,scale=out_color_matrix=bt709:out_range=tv:flags=neighbor,format=yuv420p`,
     '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-color_range', 'tv',
-    '-c:v', 'libx264', '-preset', arg('preset', 'slow'), '-crf', String(arg('crf', 18)), '-tune', 'animation', '-r', String(FPS));
-  if (audio) args.push('-c:a', 'aac', '-b:a', '256k', '-shortest');
+    '-c:v', 'libx264', '-preset', arg('preset', share ? 'veryslow' : 'slow'), '-crf', String(arg('crf', share ? 25 : 18)), '-tune', 'animation', '-r', String(outFps));
+  if (audio) args.push('-c:a', 'aac', '-b:a', share ? '128k' : '256k', '-shortest');
   args.push('-movflags', '+faststart', out);
   await ffmpeg(args);
 }
@@ -196,7 +200,7 @@ try {
     const f1 = Math.ceil(info.duration * FPS);
     console.log(`film: ${f1} frames @${FPS}fps (${info.duration.toFixed(2)} s)`);
     const files = await renderChunks(0, f1, `a${FPS}`, argv.includes('--force'));
-    const out = arg('out', path.join(BUILD, `only_one_pixel_${H * parseInt(arg('scale', 4), 10)}p${FPS}.mp4`));
+    const out = arg('out', path.join(BUILD, `only_one_pixel_${H * parseInt(arg('scale', 4), 10)}p${argv.includes('--share') ? 30 : FPS}.mp4`));
     await concatAndEncode(files, out, 0, f1 / FPS, pickAudio());
     console.log(out);
   }

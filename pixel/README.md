@@ -28,7 +28,8 @@ python3 -m http.server 8000             # 在仓库根目录
 
 npm run pixel:cues                      # 导出音效提示表 -> pixel/build/cues.json
 npm run pixel:sfx                       # 合成音效并与歌曲混音 -> pixel/build/audio/mix.wav
-npm run pixel:render                    # 渲染成片 -> pixel/build/only_one_pixel_1080p60.mp4
+npm run pixel:render                    # 渲染成片 -> pixel/build/only_one_pixel_1080p60.mp4（约 54 MB）
+node pixel/render.mjs --all --share     # 复用已渲染的帧，压一个便于发送的 1080p30 版本（约 25 MB）
 node pixel/render.mjs --sheet 33,96.5,191 --name look     # 抽帧拼图 -> pixel/build/stills/look.png
 node pixel/render.mjs --range 90:112                      # 渲染某一段（带音频）
 node pixel/render.mjs --bench 53,214                      # 测每帧耗时
