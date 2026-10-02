@@ -97,6 +97,21 @@ function drawFigure(g, def, pose, pal) {
   if (def.after) def.after(g, pose, pal, { x: x + lean, neckY, view, hand: hand() });
 }
 
+// where pixel (ix, iy) of a held item lands, as an offset from the figure's anchor (feet), flip-aware.
+// Mirrors drawFigure's hand and item placement, so effects (water from a spout) start in the right place.
+export function heldPoint(def, pose, item, ix, iy) {
+  const front = (pose.view || 'side') !== 'side';
+  const sh = def.shoulders[front ? 'front' : 'side'][1];
+  const armR = pose.armR || def.arms[front ? 'front' : 'side'][1];
+  const bob = Math.round(pose.bob || 0) + Math.round(pose.crouch || 0);
+  const lean = Math.round(pose.lean || 0);
+  const neckY = AY - 1 - def.neck + bob;
+  const hx = AX + sh[0] + lean + armR[0], hy = neckY + sh[1] + armR[1];
+  const cx = Math.round(hx + (item.dx || 0) - item.s.ax) + ix;
+  const cy = Math.round(hy + (item.dy || 0) - item.s.ay) + iy;
+  return [pose.flip ? AX - 1 - cx : cx - AX, cy - AY];
+}
+
 // cached sprite of a pose (anchor = ground row under the feet)
 export function figure(def, pose, pal) {
   const key = def.name + JSON.stringify(pose, (kk, v) => (kk === 's' && v && v.c ? v.c.dataset.fid || (v.c.dataset.fid = 'c' + ids++) : typeof v === 'number' ? Math.round(v * 10) / 10 : v)) + JSON.stringify(pal);

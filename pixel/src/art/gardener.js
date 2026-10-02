@@ -126,6 +126,8 @@ kgk
 .k.
 .B.
 .B.`;
+// the pixel just under the spout of CAN_POUR, where water leaves the can
+export const SPOUT = [12, 9];
 export const ITEMS = {
   can: () => sprite(CAN, { k: P.ink, g: P.g2, G: P.g3, R: P.rust }, { ax: 2, ay: 4 }),
   canPour: () => sprite(CAN_POUR, { k: P.ink, g: P.g2, G: P.g3, R: P.rust }, { ax: 2, ay: 4 }),

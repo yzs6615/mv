@@ -12,7 +12,8 @@ import { P, ex, RAINBOW } from '../core/pal.js';
 import { text } from '../core/font.js';
 import { grayPass } from '../core/post.js';
 import { E, prog, clamp, lerp, hash2, hash } from '../core/math.js';
-import { drawGardener, pose, ITEMS } from '../art/gardener.js';
+import { drawGardener, pose, ITEMS, GARDENER, SPOUT } from '../art/gardener.js';
+import { heldPoint } from '../art/rig.js';
 import { drawCitizen, folkPoses, RACER, CITIZEN, CPAL, freeLook } from '../art/folk.js';
 import { bubble, uniqueFlower, personalSeed, cloudSprite } from '../art/props.js';
 import { puff, sparkle, burst, glow, ringWave, lightPillar, pour, petals } from '../art/fx.js';
@@ -118,7 +119,7 @@ export default (ctx) => {
       } else {
         const jump = t > T_JUMP ? -Math.round(Math.sin(clamp((t - T_JUMP) / 0.45) * Math.PI) * 8) : 0;
         p = t > T_JUMP ? { view: 'front', expr: 'grin', armL: [-3, -10], armR: [3, -10], armsFront: true, bob: jump, ...style }
-          : { view: 'side', flip: i < 4 ? false : true, expr: 'smile', armR: [6, 3], item: { s: ITEMS.canPour(), dy: 1 }, ...style };
+          : { view: 'side', flip: i < 4 ? false : true, expr: 'smile', armR: [3, 2], item: { s: ITEMS.canPour(), dx: -3, dy: 1 }, ...style };
       }
       drawCitizen(g, x, y, p, pal, def);
       if (col && t - (STEPS[Math.min(4, i % 5)] || 0) < 0.4 && t > STEPS[0]) burst(g, x, y - 20, t - STEPS[Math.min(4, i % 5)], { n: 6, r: 12, cols: [P.white, P.yellow, P.pink] });
@@ -139,16 +140,23 @@ export default (ctx) => {
           g.ctx.drawImage(s.c, Math.round(fx - s.ax), Math.round(fy - s.ay + (1 - k) * 12));
         }
       }
-      if (t > T_RAIN && t < T_JUMP) pour(g, x + (i < 4 ? 13 : -13), y - 20, T_RAIN + 0.3, T_JUMP, t, { ground: y - 1, vx: i < 4 ? 10 : -10, col: P.cyan });
+      if (t > T_RAIN && t < T_JUMP && p.item) {
+        const [ox, oy] = heldPoint(def, p, p.item, SPOUT[0], SPOUT[1]);
+        pour(g, x + ox, y + oy, T_RAIN + 0.3, T_JUMP, t, { ground: y - 1, to: x + (i < 4 ? 9 : -9), col: P.cyan });
+      }
     }
     // the gardener by his flower
     const gp = t < T_BLOOM ? { ...pose.front(t), expr: 'happy', armL: [-3, 2], armR: [3, 2] }
       : t < T_ALL ? { ...pose.front(t), expr: 'content' }
       : t < T_RAIN ? { view: 'front', expr: 'happy', armL: [-3, -9], armR: [3, -9], armsFront: true, bob: m.sinceBeat(t) < 0.12 ? -3 : 0 }
-      : t < T_JUMP ? { ...pose.idle(t), flip: true, expr: 'smile', armR: [6, 3], item: { s: ITEMS.canPour(), dy: 1 } }
+      : t < T_JUMP ? { ...pose.idle(t), flip: true, expr: 'smile', armR: [7, -2], item: { s: ITEMS.canPour(), dy: 1 } }
       : { view: 'front', expr: 'happy', armL: [-3, -10], armR: [3, -10], armsFront: true, bob: -Math.round(Math.sin(clamp((t - T_JUMP) / 0.45) * Math.PI) * 8) };
-    drawGardener(g, F.spot + 18, G, gp);
-    if (t > T_RAIN && t < T_JUMP) pour(g, F.spot + 5, G - 20, T_RAIN + 0.3, T_JUMP, t, { ground: G - 1, vx: -10, col: P.cyan });
+    const gxw = t > T_RAIN && t < T_JUMP ? F.spot + 17 : F.spot + 18;
+    drawGardener(g, gxw, G, gp);
+    if (t > T_RAIN && t < T_JUMP) {
+      const [ox, oy] = heldPoint(GARDENER, gp, gp.item, SPOUT[0], SPOUT[1]);
+      pour(g, gxw + ox, G + oy, T_RAIN + 0.3, T_JUMP, t, { ground: G - 1, to: F.spot, col: P.cyan });
+    }
     g.pop();
     if (t > T_ALL) petals(g, t, { n: 50, drift: 10 });
   }

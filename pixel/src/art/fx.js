@@ -40,7 +40,10 @@ export function burst(g, x, y, age, o = {}) {
 
 // falling water drops from a spout (watering can): drops born every dt, falling under gravity
 export function pour(g, x, y, t0, t1, t, o = {}) {
-  const dt = o.dt || 0.05, groundY = o.ground ?? y + 30, col = o.col || P.cyan, vx = o.vx ?? 18;
+  const dt = o.dt || 0.05, groundY = o.ground ?? y + 30, col = o.col || P.cyan;
+  // o.to: aim the stream so it lands at that x (fall time from y = y0 + 40a^2 + 6a)
+  const fall = (-6 + Math.sqrt(36 + 160 * Math.max(1, groundY - y))) / 80;
+  const vx = o.to !== undefined ? (o.to - x) / fall : o.vx ?? 18;
   for (let tb = Math.max(t0, t - 1); tb <= Math.min(t1, t); tb += dt) {
     const k = Math.round(tb / dt);
     const a = t - tb;

@@ -8,7 +8,8 @@ import { P, ex } from '../core/pal.js';
 import { text } from '../core/font.js';
 import { grayPass } from '../core/post.js';
 import { E, prog, clamp, lerp, hash2, hash } from '../core/math.js';
-import { drawGardener, pose, seedSprite, ITEMS } from '../art/gardener.js';
+import { drawGardener, pose, seedSprite, ITEMS, GARDENER, SPOUT } from '../art/gardener.js';
+import { heldPoint } from '../art/rig.js';
 import { drawCitizen, folkPoses, RACER, CPAL } from '../art/folk.js';
 import { bubble, uniqueFlower, cloudSprite } from '../art/props.js';
 import { puff, sparkle, burst, pour, lightPillar, glow, ringWave } from '../art/fx.js';
@@ -169,8 +170,9 @@ export default (ctx) => {
   }
 
   function gardener(g, t) {
-    const x = gx(t);
+    let x = gx(t);
     let p;
+    let spout = null;
     if (t < T_TURN) p = { ...pose.idle(t), expr: 'surprised' };
     else if (t < STEPS[0]) p = { ...pose.front(t), expr: 'determined' };
     else if (t < T_ARRIVE) {
@@ -189,9 +191,11 @@ export default (ctx) => {
       const s = last ? t - last : 1;
       p = { ...pose.idle(t), flip: true, crouch: 4, legL: [-3, 0], legR: [4, 0], armR: [5, 7 + (s < 0.12 ? 1 : 0)], armL: [4, 7 + (s < 0.12 ? 1 : 0)], expr: t > T_SHINE ? 'content' : 'smile' };
     } else if (t < T_SPROUT) {
-      // watering: stand, hold the can out over the spot
+      // watering: a step back, the can held out over the spot; the water leaves from its spout
       const pourOn = t > WATER0;
-      p = { ...pose.idle(t), flip: true, expr: 'smile', armR: [6, 2], item: { s: pourOn ? ITEMS.canPour() : ITEMS.can(), dx: 0, dy: 1 } };
+      x = lerp(x, SX + 17, prog(t, T_CAN, T_CAN + 0.25, E.outQ));
+      p = { ...pose.idle(t), flip: true, expr: 'smile', armR: [7, -2], item: { s: pourOn ? ITEMS.canPour() : ITEMS.can(), dx: 0, dy: 1 } };
+      if (pourOn) { const [ox, oy] = heldPoint(GARDENER, p, p.item, SPOUT[0], SPOUT[1]); spout = [x + ox, G + oy]; }
     } else if (t < T_COLOR) {
       const a = t - T_SPROUT;
       p = { view: 'front', armL: [-3, -7], armR: [3, -7], armsFront: true, expr: 'happy', bob: a < 0.15 ? -3 : a < 0.3 ? -1 : 0, scarf: t * 2 };
@@ -206,7 +210,7 @@ export default (ctx) => {
     }
     drawGardener(g, t < T_SIT ? x : x + 4, G, p);
     // water
-    if (t > WATER0 && t < T_SPROUT) pour(g, x - 13, G - 23, WATER0, WATER1, t, { ground: G - 1, vx: -10, col: P.cyan });
+    if (spout) pour(g, spout[0], spout[1], WATER0, WATER1, t, { ground: G - 1, to: SX, col: P.cyan });
     // sweat drop flying off to the soil
     if (t > T_WIPE + 0.3 && t < T_SPLASH + 0.1) {
       const k = prog(t, T_WIPE + 0.3, T_SPLASH, E.inQ);

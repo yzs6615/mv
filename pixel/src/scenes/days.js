@@ -9,7 +9,8 @@ import { P, ex } from '../core/pal.js';
 import { text } from '../core/font.js';
 import { grayPass, remapPass } from '../core/post.js';
 import { E, prog, clamp, lerp, hash2, hash } from '../core/math.js';
-import { drawGardener, pose, ITEMS } from '../art/gardener.js';
+import { drawGardener, pose, ITEMS, GARDENER, SPOUT } from '../art/gardener.js';
+import { heldPoint } from '../art/rig.js';
 import { bubble, uniqueFlower, cloudSprite } from '../art/props.js';
 import { puff, sparkle, pour, glow, wind, petals, rain } from '../art/fx.js';
 import { heroFlower } from '../art/hero.js';
@@ -71,8 +72,11 @@ export default (ctx) => {
     }
     switch (i) {
       case 0: {
-        drawGardener(g, x, G, { ...pose.idle(t), flip: true, expr: 'smile', armR: [6, 2], item: { s: ITEMS.canPour(), dy: 1 } });
-        pour(g, x - 13, G - 23, T0 + i * D, T0 + (i + 0.6) * D, t, { ground: G - 1, vx: -10, col: P.cyan });
+        const wx = SX + 17;
+        const wp = { ...pose.idle(t), flip: true, expr: 'smile', armR: [7, -2], item: { s: ITEMS.canPour(), dy: 1 } };
+        drawGardener(g, wx, G, wp);
+        const [ox, oy] = heldPoint(GARDENER, wp, wp.item, SPOUT[0], SPOUT[1]);
+        pour(g, wx + ox, G + oy, T0 + i * D, T0 + (i + 0.6) * D, t, { ground: G - 1, to: SX, col: P.cyan });
         break;
       }
       case 1: case 7: {

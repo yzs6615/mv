@@ -37,13 +37,14 @@ export const pot = (exempt = false) => sprite(POT, exempt ? { k: ex(P.ink), C: e
 // ---- unique flowers: shape, colours, height, lean all from the seed ----
 // returns a sprite with its anchor at the base of the stem
 export function uniqueFlower(seed, o = {}) {
-  const key = 'uf' + seed + (o.small ? 's' : '') + (o.exempt ? 'x' : '') + (o.bud ? 'b' : '');
+  const key = 'uf' + seed + (o.small ? 's' : '') + (o.exempt ? 'x' : '') + (o.bud ? 'b' : '') + (o.shop ? 'p' : '');
   return makeSprite(24, 32, (g) => {
     const r = rng(seed * 2654435761 + 11);
     const exf = o.exempt ? ex : (c) => c;
     const c1 = r.pick(HUES), c2 = r.pick(HUES), cc = r.pick([P.yellow, P.gold, P.white, P.brownD, P.orange, P.cyan]);
     const sh = shade(c1);
-    const h = (o.small ? 8 : 12) + r.int(0, o.small ? 4 : 8);
+    // shop: a short stem and a big head, the size of a potted rose
+    const h = o.shop ? 3 + r.int(0, 2) : (o.small ? 8 : 12) + r.int(0, o.small ? 4 : 8);
     const lean = r.int(-2, 2);
     const cx = 12, base = 31;
     // stem with a kink
@@ -63,7 +64,7 @@ export function uniqueFlower(seed, o = {}) {
     const hx = cx + lean, hy = base - h;
     if (o.bud) { g.rect(hx - 1, hy - 2, 3, 3, exf(c1)); g.px(hx, hy - 3, exf(c2)); return; }
     const type = r.int(0, 7);
-    const R = o.small ? 2 : r.int(2, 4);
+    const R = o.small ? 2 : o.shop ? r.int(3, 4) : r.int(2, 4);
     const k = exf(P.ink);
     switch (type) {
       case 0: { // daisy: petals around a centre
@@ -423,3 +424,52 @@ export function personalSeed(seed, exempt = false) {
     else { for (let i = 0; i < 5; i++) { const an = (i / 5) * Math.PI * 2 - Math.PI / 2; g.line(4, 4, 4 + Math.cos(an) * 4, 4 + Math.sin(an) * 4, X(i % 2 ? a : b)); } g.px(4, 4, X(P.white)); }
   }, { ax: 4.5, ay: 4.5 }, key);
 }
+
+// a thought cloud (puffy, with two little circles trailing down-left to the thinker)
+export const thought = () => makeSprite(24, 22, (g) => {
+  const blobs = [[7, 7, 4], [12, 5, 5], [17, 7, 4], [9, 10, 4], [15, 10, 4], [19, 10, 3], [5, 10, 3]];
+  for (const [x, y, r] of blobs) g.disc(x, y, r + 1, P.ink);
+  for (const [x, y, r] of blobs) g.disc(x, y, r, P.white);
+  g.disc(5, 17, 2, P.ink); g.disc(5, 17, 1, P.white);
+  g.rect(2, 19, 3, 3, P.ink); g.px(3, 20, P.white);
+}, { ax: 3, ay: 22 }, 'thought');
+
+// what someone is secretly thinking of: three flowers that have nothing in common
+const DREAMS = {
+  sunflower: { art: `
+...ooo...
+.ooyyyoo.
+.oybbbyo.
+oybbBbbyo
+oybBbBbyo
+oybbBbbyo
+.oybbbyo.
+.ooyyyoo.
+...ooo...`, pal: { o: P.gold, y: P.yellow, b: P.brown, B: P.brownD } },
+  tulip: { art: `
+.p..p..p.
+.pp.p.pp.
+.ppppppp.
+.pPpppPp.
+..ppppp..
+...ppp...
+....g....
+.gg.g.gg.
+..ggggg..`, pal: { p: P.pink, P: P.magenta, g: P.greenM } },
+  bluebell: { art: `
+....g....
+....gg...
+...kbbk..
+..kbccbk.
+..kbcbbk.
+.kbbbbbbk
+.kbbbbbbk
+kb.b.b.bk
+.k.k.k.k.`, pal: { g: P.greenM, b: P.blue, c: P.cyan, k: P.blueD } },
+};
+export const dream = (kind) => {
+  const d = DREAMS[kind];
+  const pal = {};
+  for (const k in d.pal) pal[k] = ex(d.pal[k]);
+  return sprite(d.art, pal, { ax: 4.5, ay: 4.5 });
+};
