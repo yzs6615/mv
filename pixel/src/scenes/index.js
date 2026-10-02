@@ -1,0 +1,15 @@
+import title from './title.js';
+import town from './town.js';
+import flyover from './flyover.js';
+import street from './street.js';
+import race1 from './race1.js';
+import plant from './plant.js';
+import days from './days.js';
+import storm from './storm.js';
+import bloom from './bloom.js';
+import race2 from './race2.js';
+import bloom2 from './bloom2.js';
+import world from './world.js';
+import party from './party.js';
+import finale from './finale.js';
+export const SCENES = [title, town, flyover, street, race1, plant, days, storm, bloom, race2, bloom2, world, party, finale];

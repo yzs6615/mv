@@ -11,3 +11,6 @@ __pycache__/
 mg/data/lyrics.txt
 mg/data/lyrics.json
 mg/build/
+
+# pixel MV build output (frames, chunks, audio mix, stills)
+pixel/build/
